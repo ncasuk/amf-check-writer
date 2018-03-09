@@ -1,5 +1,69 @@
 # ncas-amf-check-writer
 
+This repo contains scripts to generate python checks suites for `compliance-checker`
+based on specifications for AMF data in spreadsheets in Google Drive.
+
+The `compliance-checker` plugin resulting from this work can be obtained
+here: https://github.com/joesingo/cc-plugin-amf. Note that you still need to
+install the JSON controlled vocabulary files with `pyessv`, so most of the steps
+listed below are still required.
+
+## Setup ##
+
+```bash
+# Create an activate a virtualenv
+virtualenv -p python2.7. venv
+source venv/bin/activate
+
+# Get various repos
+git clone https://github.com/cedadev/compliance-check-maker.git
+git clone -b amf https://github.com/joesingo/compliance-check-lib  # Note: clone 'amf' branch
+git clone https://github.com/joesingo/pyessv-writer-amf
+
+# Install requirements
+pip install -r amf-compliance-checker/requirements.txt
+pip install -r pyessv-writer-amf/requirements.txt
+pip install -e ./compliance-check-lib
+pip install -e ./compliance-check-maker
+pip install compliance-checker
+
+# Run scripts - see sections below for details on each
+cd amf-compliance-checker/amf-compliance-checker
+python download_from_drive.py /tmp/spreadsheets
+mkdir /tmp/cvs
+python create_controlled_vocabs.py /tmp/spreadsheets /tmp/cvs
+
+# Set up compliance-check-maker - SKIP THIS IF USING cc-plugin-amf and
+# continue at ***
+cd ../../compliance-check-maker
+# Clear out old YAMl checks, but keep PROJECT_METADATA.yml
+mv project/amf/PROJECT_METADATA.yml /tmp
+rm project/amf/*.yml
+mv /tmp/PROJECT_METADATA.yml project/amf
+
+cd ../amf-compliance-checker/amf-compliance-checker
+python create_yaml_checks.py /tmp/cvs ../../compliance-check-maker/project/amf
+
+cd ../../compliance-check-maker
+python write_checkers.py amf
+
+# Python checks are now available at ouput/amf/py/amf_*.py to make them
+# available to compliance-checker they need to installed as part of a plugin -
+# take cc-plugin-amf as an example and update the files in there. See the
+# README.md in that repo to avoid writing list of checks out by hand...
+
+# ***
+# Now cache JSON CVs generated earlier so they can be used by compliance-check-lib
+cd ../pyessv-writer-amf/sh
+mkdir -p ~/.esdoc/pyessv-archive
+python write_amf_cvs.py /tmp/cvs
+
+# If everything worked okay - run a check! e.g.
+cchecker.py --test amf-o2n2_concentration_ratio_variable /path/to/netcdf/file.nc
+```
+
+## Scripts ##
+
 ### download_from_drive.py ###
 
 Usage: `python download_from_drive.py <output directory>`.
