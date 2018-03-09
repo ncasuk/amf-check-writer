@@ -56,6 +56,11 @@ def main(spreadsheets_dir, out_dir):
     The files in `spreadsheets_dir` should be structed like the output of
     download_from_drive.py
     """
+    if not os.path.isdir(spreadsheets_dir):
+        sys.stderr.write("{}: No such directory '{}'".format(sys.argv[0], spreadsheets_dir) +
+                         os.linesep)
+        sys.exit(1)
+
     variables_sheet_regex = re.compile(r"Variables( - [a-zA-Z]*)?.tsv")
 
     for dirpath, dirnames, filenames in os.walk(spreadsheets_dir):
