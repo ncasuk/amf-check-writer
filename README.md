@@ -57,7 +57,10 @@ This scripts takes a directory containing .tsv files downloaded with
 `download_from_drive.py`, finds those that describe specifications for
 attributes in variables, and converts them to a JSON format.
 
-JSON files are saved in `<output_dir>` as `amd-<product name>-<sheet-name>.json`.
+JSON files are saved in `<output_dir>` as `amd_<product name>_<type>_variable>.json`,
+but `<type>` is omitted if not present. Examples include `amf_common_air_variable.json`,
+`amf_common_sea_variable.json`, `amf_sonde_variable.json` (`sonde` is product name, type is
+not present).
 
 The format is
 

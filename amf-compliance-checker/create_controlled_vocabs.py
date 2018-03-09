@@ -6,6 +6,7 @@ https://github.com/agstephens/AMF_CVs/blob/a87dd06eee27a6cf517a6f5346df6f07468d1
 """
 
 import os
+import re
 import json
 import sys
 from collections import OrderedDict
@@ -49,20 +50,36 @@ def main(spreadsheets_dir, out_dir):
     The files in `spreadsheets_dir` should be structed like the output of
     download_from_drive.py
     """
+    variables_sheet_regex = re.compile(r"Variables( - [a-zA-Z]*)?.tsv")
+
     for dirpath, dirnames, filenames in os.walk(spreadsheets_dir):
         for fname in filenames:
-            if fname.endswith(".tsv") and fname.startswith("Variables"):
+            match = variables_sheet_regex.match(fname)
+            if match:
                 # Product name is the name of the spreadsheet, which is the
                 # parent directory of the tsv file
-                product_name = os.path.split(dirpath)[-1].lower()
+                product_name = os.path.split(dirpath)[-1].lower().replace("-", "_")
                 if product_name.endswith(".xlsx"):
                     product_name = product_name[:-5]
 
-                # Format sheet nicely
-                sheet_name = fname[:-4].lower().replace(" ", "-").replace("---", "-")
+                # Remove .tsv suffix and split into components
+                sheet_name_parts = fname[:-4].lower().split(" - ")
+
+                # Build filename for JSON output - should be of the form
+                # amd_<product name>(_<type>)?_variable.json, where <type> is
+                # the last component of the sheet name (but ignore 'Specific')
+                json_filename = "amf_{}".format(product_name)
+
+                var_type = match.groups()[0]
+                if var_type:
+                    # Remove " - " prefix and convert to lower case
+                    var_type = var_type.lower()[3:]
+                    if var_type != "specific":
+                        json_filename += "_{}".format(var_type)
+
+                json_filename += "_variable.json"
 
                 # Convert to JSON and write out
-                json_filename = "amf-{}-{}.json".format(product_name, sheet_name)
                 out_file = os.path.join(out_dir, json_filename)
                 print("Writing to {}".format(out_file))
                 with open(out_file, "w") as f:
