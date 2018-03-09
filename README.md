@@ -12,6 +12,25 @@ The directory structure of the Drive folder is preserved, and a directory for
 each spreadsheet is created. The individual sheets are saved as
 `<sheet name>.tsv` inside the spreadsheet directory.
 
+For example, after running `python download_from_drive.py /tmp/mysheets` with
+a test folder:
+
+```
+$ tree /tmp/mysheets
+/tmp/mysheets
+├── first-spreadsheet.xlsx
+│   ├── Sheet1.tsv
+│   └── Sheet2.tsv
+└── sub-folder
+    ├── second-spreadsheet.xlsx
+    │   └── Sheet1.tsv
+    └── sub-sub-dir
+        └── other-spreadsheet.xlsx
+            └── my-sheet.tsv
+
+5 directories, 4 files
+```
+
 #### Authentication ####
 
 Follow the instructions on the Google site to get credentials for the Sheets
