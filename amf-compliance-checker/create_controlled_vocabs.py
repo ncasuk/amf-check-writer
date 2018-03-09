@@ -17,19 +17,25 @@ from csv import DictReader
 NUMERIC_TYPES = ("valid_min", "valid_max")
 
 
-def convert_to_json(tsv_filename):
+def convert_to_json(tsv_filename, namespace):
     """
     Read a tsv file and return a dictionary in the controlled vocab format
     """
-    cv = {"variable": OrderedDict()}
+    cv = {namespace: OrderedDict()}
 
     with open(tsv_filename) as tsv_file:
         reader = DictReader(tsv_file, delimiter="\t")
 
         for row in reader:
             if row["Variable"]:
+
+                # Variable names containing ??? cause problems with pyessv,
+                # and are probably not correct anyway
+                if row["Variable"].endswith("???"):
+                    raise ValueError("Invalid variable name '{}'".format(row["Variable"]))
+
                 current_var = row["Variable"]
-                cv["variable"][current_var] = OrderedDict()
+                cv[namespace][current_var] = OrderedDict()
 
             elif row["Attribute"] and row["Value"]:
                 attr = row["Attribute"]
@@ -38,7 +44,7 @@ def convert_to_json(tsv_filename):
                 if attr in NUMERIC_TYPES and not value.startswith("<"):
                     value = float(value)
 
-                cv["variable"][current_var][attr] = value
+                cv[namespace][current_var][attr] = value
     return cv
 
 
@@ -65,25 +71,32 @@ def main(spreadsheets_dir, out_dir):
                 # Remove .tsv suffix and split into components
                 sheet_name_parts = fname[:-4].lower().split(" - ")
 
-                # Build filename for JSON output - should be of the form
-                # amd_<product name>(_<type>)?_variable.json, where <type> is
-                # the last component of the sheet name (but ignore 'Specific')
-                json_filename = "amf_{}".format(product_name)
-
+                # Create namespace for variables for this product. Needs to be
+                # unique across all products; will be of the form
+                # <product_name>(_<type>)?_variable where type if the last
+                # component of the sheet name (but ignore 'specific')
+                namespace = product_name
                 var_type = match.groups()[0]
                 if var_type:
                     # Remove " - " prefix and convert to lower case
                     var_type = var_type.lower()[3:]
                     if var_type != "specific":
-                        json_filename += "_{}".format(var_type)
+                        namespace += "_{}".format(var_type)
+                namespace += "_variable"
 
-                json_filename += "_variable.json"
-
-                # Convert to JSON and write out
+                json_filename = "amf_{}.json".format(namespace)
                 out_file = os.path.join(out_dir, json_filename)
-                print("Writing to {}".format(out_file))
-                with open(out_file, "w") as f:
-                    json.dump(convert_to_json(os.path.join(dirpath, fname)), f, indent=4)
+
+                try:
+                    # Convert to JSON and write out
+                    output = convert_to_json(os.path.join(dirpath, fname), namespace)
+                    print("Writing to {}".format(out_file))
+                    with open(out_file, "w") as f:
+                        json.dump(output, f, indent=4)
+
+                except ValueError as ex:
+                    sys.stderr.write("Error in file {}: {}".format(fname, ex) +
+                                     os.linesep)
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
