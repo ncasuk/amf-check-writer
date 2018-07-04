@@ -11,8 +11,8 @@ listed below are still required.
 ## Setup ##
 
 ```bash
-# Create an activate a virtualenv
-virtualenv -p python2.7. venv
+# Create an activate a python 3 virtual environment
+python3 -m venv venv
 source venv/bin/activate
 
 # Get various repos

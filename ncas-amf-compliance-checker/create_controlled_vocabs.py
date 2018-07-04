@@ -94,8 +94,8 @@ def main(spreadsheets_dir, out_dir):
 
                 try:
                     # Convert to JSON and write out
-                    output = convert_to_json(os.path.join(dirpath, fname), namespace)
                     print("Writing to {}".format(out_file))
+                    output = convert_to_json(os.path.join(dirpath, fname), namespace)
                     with open(out_file, "w") as f:
                         json.dump(output, f, indent=4)
 
