@@ -56,7 +56,7 @@ python write_checkers.py amf
 # Now cache JSON CVs generated earlier so they can be used by compliance-check-lib
 cd ../pyessv-writer-amf/sh
 mkdir -p ~/.esdoc/pyessv-archive
-python write_amf_cvs.py /tmp/cvs
+python write_amf_cvs.py --source /tmp/cvs
 
 # If everything worked okay - run a check! e.g.
 cchecker.py --test amf-o2n2_concentration_ratio_variable /path/to/netcdf/file.nc
