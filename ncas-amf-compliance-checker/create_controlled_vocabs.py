@@ -13,22 +13,41 @@ from collections import OrderedDict
 from csv import DictReader
 
 
-# Attributes whose value should be interpreted as a float instead of string
-NUMERIC_TYPES = ("valid_min", "valid_max")
-
-
-def convert_to_json(tsv_filename, namespace):
+class BaseCvGenerator:
     """
-    Read a tsv file and return a dictionary in the controlled vocab format
+    Base class for generating a controlled vocab JSON file from a TSV file.
+    Subclass this class for each CV type and define the properties and methods
+    below
     """
-    cv = {namespace: OrderedDict()}
+    # String that is prefixed to TSV filenames for this type of CV
+    tsv_filename_prefix = None
 
-    with open(tsv_filename) as tsv_file:
-        reader = DictReader(tsv_file, delimiter="\t")
+    # Name to use for this CV type in namespace
+    name = None
 
+    @classmethod
+    def convert_to_json(cls, reader, namespace):
+        """
+        Read a TSV file and convert it to a dictionary in the controlled
+        vocab format.
+
+        `reader` is a csv.DictReader instance
+        """
+        raise NotImplementedError
+
+
+class VariableCvGenerator(BaseCvGenerator):
+    tsv_filename_prefix = "Variables"
+    name = "variable"
+
+    # Attributes whose value should be interpreted as a float instead of string
+    numeric_types = ("valid_min", "valid_max")
+
+    @classmethod
+    def convert_to_json(cls, reader, namespace):
+        cv = {namespace: OrderedDict()}
         for row in reader:
             if row["Variable"]:
-
                 # Variable names containing ??? cause problems with pyessv,
                 # and are probably not correct anyway
                 if row["Variable"].endswith("???"):
@@ -41,19 +60,39 @@ def convert_to_json(tsv_filename, namespace):
                 attr = row["Attribute"]
                 value = row["Value"].strip()  # Some of the sheets have extraneous whitespace...
 
-                if attr in NUMERIC_TYPES and not value.startswith("<"):
+                if attr in cls.numeric_types and not value.startswith("<"):
                     value = float(value)
 
                 cv[namespace][current_var][attr] = value
-    return cv
+        return cv
+
+
+class DimensionCvGenerator(BaseCvGenerator):
+    tsv_filename_prefix = "Dimensions"
+    name = "dimension"
+
+    @classmethod
+    def convert_to_json(cls, reader, namespace):
+        cv = {namespace: OrderedDict()}
+        for row in reader:
+            if row["Name"] and row["Length"] and row["units"]:
+                name, length, units = map(str.strip, (row[x] for x in ("Name", "Length", "units")))
+                cv[namespace][name] = {
+                    "length": length,
+                    "units": units
+                }
+        if not cv[namespace]:
+            raise ValueError("No dimensions found")
+        return cv
 
 
 def main(spreadsheets_dir, out_dir):
     """
-    Find TSV files containing metadata about variables under `spreadsheets_dir`
-    and convert them to a JSON format. Save the resulting JSON in `out_dir`.
+    Find TSV files containing metadata about variables etc under
+    `spreadsheets_dir` and convert them to a JSON format. Save the resulting
+    JSON in `out_dir`.
 
-    The files in `spreadsheets_dir` should be structed like the output of
+    The files in `spreadsheets_dir` should be structured like the output of
     download_from_drive.py
     """
     if not os.path.isdir(spreadsheets_dir):
@@ -61,47 +100,59 @@ def main(spreadsheets_dir, out_dir):
                          os.linesep)
         sys.exit(1)
 
-    variables_sheet_regex = re.compile(r"Variables( - [a-zA-Z]*)?.tsv")
+    # Build a mapping from filename prefix to generator class
+    cv_generator_mapping = {cls.tsv_filename_prefix: cls
+                            for cls in (VariableCvGenerator, DimensionCvGenerator)}
+
+    # Build a regex to figure out with generator class to use for a given file
+    prefixes = "|".join(cv_generator_mapping.keys())
+    regex = re.compile(r"(?P<cv_type>{prefixes})( - (?P<type>[a-zA-Z]*))?.tsv"
+                       .format(prefixes=prefixes))
 
     for dirpath, dirnames, filenames in os.walk(spreadsheets_dir):
         for fname in filenames:
-            match = variables_sheet_regex.match(fname)
+            match = regex.match(fname)
             if match:
+                generator_cls = cv_generator_mapping[match.group("cv_type")]
+
                 # Product name is the name of the spreadsheet, which is the
                 # parent directory of the tsv file
                 product_name = os.path.split(dirpath)[-1].lower().replace("-", "_")
                 if product_name.endswith(".xlsx"):
                     product_name = product_name[:-5]
 
-                # Remove .tsv suffix and split into components
-                sheet_name_parts = fname[:-4].lower().split(" - ")
-
-                # Create namespace for variables for this product. Needs to be
-                # unique across all products; will be of the form
-                # <product_name>(_<type>)?_variable where type if the last
-                # component of the sheet name (but ignore 'specific')
+                # Create namespace for this CV. Needs to be unique across all
+                # products; will be of the form
+                # <product_name>(_<type>)?_<cv-type> where type is the last
+                # component of the sheet name (but ignore 'specific'), and
+                # cv-type is 'variable' or 'dimension'
                 namespace = product_name
-                var_type = match.groups()[0]
-                if var_type:
-                    # Remove " - " prefix and convert to lower case
-                    var_type = var_type.lower()[3:]
-                    if var_type != "specific":
-                        namespace += "_{}".format(var_type)
-                namespace += "_variable"
+                type_name = match.group("type")
+                if type_name:
+                    type_name = type_name.lower()
+                    if type_name != "specific":
+                        namespace += "_{}".format(type_name)
+                namespace += "_{}".format(generator_cls.name)
 
                 json_filename = "AMF_{}.json".format(namespace)
                 out_file = os.path.join(out_dir, json_filename)
 
-                try:
-                    # Convert to JSON and write out
-                    print("Writing to {}".format(out_file))
-                    output = convert_to_json(os.path.join(dirpath, fname), namespace)
-                    with open(out_file, "w") as f:
-                        json.dump(output, f, indent=4)
+                with open(os.path.join(dirpath, fname)) as tsv_file:
+                    reader = DictReader(tsv_file, delimiter="\t")
 
-                except ValueError as ex:
-                    sys.stderr.write("Error in file {}: {}".format(fname, ex) +
-                                     os.linesep)
+                    try:
+                        # Convert to JSON and write out
+                        print("Writing to {}".format(out_file))
+                        output = generator_cls.convert_to_json(reader, namespace)
+                        with open(out_file, "w") as f:
+                            json.dump(output, f, indent=4)
+
+                    except ValueError as ex:
+                        sys.stderr.write(
+                            "Error in product {}, file '{}': {}".format(product_name, fname, ex)
+                            + os.linesep
+                        )
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:

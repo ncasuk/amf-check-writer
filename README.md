@@ -120,19 +120,19 @@ Usage: `python create_controlled_vocabs.py <input dir> <output dir>`.
 
 This scripts takes a directory containing .tsv files downloaded with
 `download_from_drive.py`, finds those that describe specifications for
-attributes in variables, and converts them to a JSON format.
+attributes in variables/dimensions, and converts them to a JSON format.
 
-JSON files are saved in `<output_dir>` as `amd_<product name>_<type>_variable>.json`,
+JSON files are saved in `<output_dir>` as `AMF_<product name>_<type>_(variable|dimension).json`,
 but `<type>` is omitted if not present. Examples include `AMF_common_air_variable.json`,
 `AMF_common_sea_variable.json`, `AMF_sonde_variable.json` (`sonde` is product name, type is
 not present).
 
-The format is
+The format is as follows:
 
 ```json
 {
-    "variable": {
-        "<var name>": {
+    "<product name>_<type>_(variable|dimension)": {
+        "<variable/dimension name>": {
             "<attr>": "<value>",
             ...
         },
@@ -141,11 +141,8 @@ The format is
 }
 ```
 
-All values are strings except when attribute is `valid_min` or `valid_max` in
-which case it is a float.
-
-This is mostly all copied from Ag's previous work:
-https://github.com/agstephens/AMF_CVs/blob/a87dd06eee27a6cf517a6f5346df6f07468d1120/scripts/write_variables_json.py
+All values are strings except for variables when the attribute is `valid_min`
+or `valid_max`; in this case it is a float.
 
 ### create_yaml_checks.py ###
 
