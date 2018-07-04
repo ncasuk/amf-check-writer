@@ -14,8 +14,11 @@ SPREADSHEET_MIME_TYPES = (
     "application/vnd.google-apps.spreadsheet"
 )
 
-
 FOLDER_MIME_TYPE = "application/vnd.google-apps.folder"
+
+FOLDERS_TO_SKIP = (
+    "products under development"
+)
 
 API_CALL_TIMES = []
 
@@ -101,6 +104,10 @@ class SheetDownloader(object):
         """
         for f in self.get_folder_children(root_id):
             if f["mimeType"] == FOLDER_MIME_TYPE:
+                if f["name"] in FOLDERS_TO_SKIP:
+                    print("Skipping folder '{}'".format(f["name"]))
+                    continue
+
                 new_folder = os.path.join(folder_name, f["name"])
                 # Make the recursive call if we have found a sub-folder
                 self.find_all_spreadsheets(callback, root_id=f["id"], folder_name=new_folder)
