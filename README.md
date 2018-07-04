@@ -16,19 +16,20 @@ virtualenv -p python2.7. venv
 source venv/bin/activate
 
 # Get various repos
-git clone https://github.com/cedadev/compliance-check-maker.git
+git clone https://github.com/ncasuk/ncas-amf-compliance-checker
+git clone https://github.com/cedadev/compliance-check-maker
 git clone -b amf https://github.com/joesingo/compliance-check-lib  # Note: clone 'amf' branch
 git clone https://github.com/joesingo/pyessv-writer-amf
 
 # Install requirements
-pip install -r amf-compliance-checker/requirements.txt
+pip install -r ncas-amf-compliance-checker/requirements.txt
 pip install -r pyessv-writer-amf/requirements.txt
 pip install -e ./compliance-check-lib
 pip install -e ./compliance-check-maker
 pip install compliance-checker
 
 # Run scripts - see sections below for details on each
-cd amf-compliance-checker/amf-compliance-checker
+cd ncas-amf-compliance-checker/ncas-amf-compliance-checker
 python download_from_drive.py /tmp/spreadsheets
 mkdir /tmp/cvs
 python create_controlled_vocabs.py /tmp/spreadsheets /tmp/cvs
@@ -41,7 +42,7 @@ mv project/amf/PROJECT_METADATA.yml /tmp
 rm project/amf/*.yml
 mv /tmp/PROJECT_METADATA.yml project/amf
 
-cd ../amf-compliance-checker/amf-compliance-checker
+cd ../ncas-amf-compliance-checker/ncas-amf-compliance-checker
 python create_yaml_checks.py /tmp/cvs ../../compliance-check-maker/project/amf
 
 cd ../../compliance-check-maker
@@ -70,7 +71,7 @@ Usage: `python download_from_drive.py <output directory>`.
 
 This script recursively finds all spreadsheets under a folder in Google Drive
 and save sheets from each as a .tsv file (the root folder ID is hardcoded in
-`amf-compliance-checker/download_from_drive.py`).
+`ncas-amf-compliance-checker/download_from_drive.py`).
 
 The directory structure of the Drive folder is preserved, and a directory for
 each spreadsheet is created. The individual sheets are saved as
