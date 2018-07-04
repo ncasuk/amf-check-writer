@@ -48,7 +48,7 @@ python create_yaml_checks.py /tmp/cvs ../../compliance-check-maker/project/amf
 cd ../../compliance-check-maker
 python write_checkers.py amf
 
-# Python checks are now available at ouput/amf/py/amf_*.py to make them
+# Python checks are now available at ouput/amf/py/AMF_*.py to make them
 # available to compliance-checker they need to installed as part of a plugin -
 # take cc-plugin-amf as an example and update the files in there. See the
 # README.md in that repo to avoid writing list of checks out by hand...
@@ -123,8 +123,8 @@ This scripts takes a directory containing .tsv files downloaded with
 attributes in variables, and converts them to a JSON format.
 
 JSON files are saved in `<output_dir>` as `amd_<product name>_<type>_variable>.json`,
-but `<type>` is omitted if not present. Examples include `amf_common_air_variable.json`,
-`amf_common_sea_variable.json`, `amf_sonde_variable.json` (`sonde` is product name, type is
+but `<type>` is omitted if not present. Examples include `AMF_common_air_variable.json`,
+`AMF_common_sea_variable.json`, `AMF_sonde_variable.json` (`sonde` is product name, type is
 not present).
 
 The format is

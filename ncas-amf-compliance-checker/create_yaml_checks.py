@@ -16,11 +16,11 @@ def convert_to_yaml_check(json_filename):
         cv = json.load(f)
 
     basename = os.path.basename(json_filename)
-    assert basename.startswith("amf_")
+    assert basename.startswith("AMF_")
 
     # Extract namespace from JSON filename. This relies heavily on the format
     # of the JSON files as produced by create_controlled_vocabs.main().
-    # Simply remove 'amf_' prefix and '.json' suffix to get the namespace
+    # Simply remove 'AMF_' prefix and '.json' suffix to get the namespace
     namespace = basename[4:-5]
 
     # Reformat name for use in various places
@@ -73,7 +73,7 @@ def main(json_dir, out_dir):
     """
     for dirpath, dirnames, filenames in os.walk(json_dir):
         for fname in filenames:
-            if fname.startswith("amf_") and fname.endswith(".json"):
+            if fname.startswith("AMF_") and fname.endswith(".json"):
                 in_file = os.path.join(dirpath, fname)
                 out_file = os.path.join(out_dir, "{}.yml".format(fname[:-5]))
 

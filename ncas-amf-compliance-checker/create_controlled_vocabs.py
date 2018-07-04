@@ -89,7 +89,7 @@ def main(spreadsheets_dir, out_dir):
                         namespace += "_{}".format(var_type)
                 namespace += "_variable"
 
-                json_filename = "amf_{}.json".format(namespace)
+                json_filename = "AMF_{}.json".format(namespace)
                 out_file = os.path.join(out_dir, json_filename)
 
                 try:
