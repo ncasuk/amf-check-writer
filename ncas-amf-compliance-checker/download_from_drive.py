@@ -11,7 +11,6 @@ from credentials import get_credentials
 ROOT_FOLDER_ID = "1TGsJBltDttqs6nsbUwopX5BL_q8AU-5X"
 
 SPREADSHEET_MIME_TYPES = (
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "application/vnd.google-apps.spreadsheet"
 )
 
