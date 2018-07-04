@@ -1,4 +1,4 @@
-# ncas-amf-check-writer
+# amf-check-writer
 
 This repo contains scripts to generate python checks suites for `compliance-checker`
 based on specifications for AMF data in spreadsheets in Google Drive.
