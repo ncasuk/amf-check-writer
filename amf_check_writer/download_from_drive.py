@@ -125,7 +125,7 @@ class SheetDownloader(object):
         """
         with open(out_file, "w") as f:
             for row in values:
-                f.write("\t".join([cell.replace("\n", " ") for cell in row]))
+                f.write("\t".join([cell.replace("\n", " ").encode("utf-8") for cell in row]))
                 f.write(os.linesep)
 
     def download_all_sheets(self, sheet_id, out_dir):
