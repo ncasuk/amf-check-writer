@@ -1,11 +1,12 @@
 import os
 import sys
-import httplib2
 import time
 
+import httplib2
 from apiclient import discovery
 
-from credentials import get_credentials
+from amf_check_writer.credentials import get_credentials
+
 
 # ID of the top level folder in Google Drive
 ROOT_FOLDER_ID = "1TGsJBltDttqs6nsbUwopX5BL_q8AU-5X"
@@ -69,9 +70,9 @@ class SheetDownloader(object):
 
         sheets_credentials = get_credentials("sheets")
         sheets_http = sheets_credentials.authorize(httplib2.Http())
-        discoveryUrl = ("https://sheets.googleapis.com/$discovery/rest?version=v4")
+        discovery_url = ("https://sheets.googleapis.com/$discovery/rest?version=v4")
         self.sheets_api = discovery.build("sheets", "v4", http=sheets_http,
-                                          discoveryServiceUrl=discoveryUrl)
+                                          discoveryServiceUrl=discovery_url)
 
     def run(self):
         self.find_all_spreadsheets(self.save_spreadsheet_callback())
@@ -81,9 +82,10 @@ class SheetDownloader(object):
         """
         Return a list of children of the Drive folder with the given ID
         """
-        results = (self.drive_api.files().list(fields="files(id, name, mimeType)",
-                                               q="'{}' in parents".format(folder_id))
-                                          .execute())
+        results = (self.drive_api.files().list(
+            fields="files(id, name, mimeType)",
+            q="'{}' in parents".format(folder_id)
+        ).execute())
         return results.get("files", [])
 
     @api_call
@@ -144,10 +146,10 @@ class SheetDownloader(object):
     def save_spreadsheet_callback(self):
         """
         Return a callback function to pass to `find_all_spreadsheets` that downloads
-        and saves sheets to a directory under `out_dir`
+        and saves sheets to a directory under `self.out_dir`
         """
         def callback(name, sheet_id, parent_folder):
-            target_dir = os.path.join(out_dir, parent_folder, name)
+            target_dir = os.path.join(self.out_dir, parent_folder, name)
             if not os.path.isdir(target_dir):
                 os.makedirs(target_dir)
 
@@ -155,8 +157,7 @@ class SheetDownloader(object):
 
         return callback
 
-
-if __name__ == "__main__":
+def main():
     if len(sys.argv) < 2:
         usage = "Usage: {} OUTPUT_DIR".format(sys.argv[0])
         sys.stderr.write(usage + os.linesep)
@@ -166,3 +167,6 @@ if __name__ == "__main__":
     out_dir = sys.argv.pop(1)
     downloader = SheetDownloader(out_dir)
     downloader.run()
+
+if __name__ == "__main__":
+    main()

@@ -10,7 +10,7 @@ def convert_to_yaml_check(json_filename):
     Return a dictionary that will be saved as a YAML file to check variables
     according to the variables listed in a JSON file.
 
-    The JSON file should have beeen produced by create_controlled_vocabs.py.
+    The JSON file should have beeen produced by create_cvs.py.
     """
     with open(json_filename) as f:
         cv = json.load(f)
@@ -19,7 +19,7 @@ def convert_to_yaml_check(json_filename):
     assert basename.startswith("AMF_")
 
     # Extract namespace from JSON filename. This relies heavily on the format
-    # of the JSON files as produced by create_controlled_vocabs.main().
+    # of the JSON files as produced by create_cvs.main().
     # Simply remove 'AMF_' prefix and '.json' suffix to get the namespace
     namespace = basename[4:-5]
 
@@ -66,11 +66,18 @@ def convert_to_yaml_check(json_filename):
 
     return yml
 
-def main(json_dir, out_dir):
+def main():
     """
     Read JSON controlled vocabulary files describing attributes for variables,
     and write YAML checks that can be used with compliance-check-maker
     """
+    if len(sys.argv) < 3:
+        usage = "Usage: {} IN_DIR OUT_DIR".format(sys.argv[0])
+        sys.stderr.write(usage + os.linesep)
+        sys.exit(1)
+
+    json_dir, out_dir = sys.argv[1:3]
+
     for dirpath, dirnames, filenames in os.walk(json_dir):
         for fname in filenames:
             if fname.startswith("AMF_") and fname.endswith(".json"):
@@ -88,9 +95,4 @@ def main(json_dir, out_dir):
                     sys.stderr.write("Missing value in {}: {}".format(in_file, ex) + os.linesep)
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        usage = "Usage: {} IN_DIR OUT_DIR".format(sys.argv[0])
-        sys.stderr.write(usage + os.linesep)
-        sys.exit(1)
-
-    main(sys.argv[1], sys.argv[2])
+    main()
