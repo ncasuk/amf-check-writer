@@ -18,7 +18,7 @@ source venv/bin/activate
 # Get various repos
 git clone https://github.com/ncasuk/amf_check_writer
 git clone https://github.com/cedadev/compliance-check-maker
-git clone -b amf https://github.com/joesingo/compliance-check-lib  # Note: clone 'amf' branch
+git clone -b amf-cc-yaml https://github.com/joesingo/compliance-check-lib  # Note: clone 'amf-cc-yaml' branch
 git clone https://github.com/joesingo/pyessv-writer-amf
 
 # Install requirements
