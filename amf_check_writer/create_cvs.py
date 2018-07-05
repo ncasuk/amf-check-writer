@@ -6,7 +6,7 @@ import os
 import sys
 import argparse
 
-from amf_check_writer.cv_handlers import BatchCvGenerator
+from amf_check_writer.cv_handlers import BatchTsvProcessor
 
 
 def main():
@@ -27,7 +27,7 @@ def main():
     if not os.path.isdir(args.output_dir):
         os.mkdir(args.output_dir)
 
-    BatchCvGenerator.write_cvs(args.spreadsheets_dir, args.output_dir)
+    BatchTsvProcessor.write_cvs(args.spreadsheets_dir, args.output_dir)
 
 
 if __name__ == "__main__":

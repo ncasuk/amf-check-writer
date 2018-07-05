@@ -1,6 +1,6 @@
 import json
 
-from amf_check_writer.cv_handlers import BatchCvGenerator
+from amf_check_writer.cv_handlers import BatchTsvProcessor
 
 
 class TestCvGeneration:
@@ -17,7 +17,7 @@ class TestCvGeneration:
             "\n".join(("\t".join(x for x in row)) for row in tsv)
         )
         output = tmpdir.mkdir("output")
-        BatchCvGenerator.write_cvs(str(spreadsheets_dir), str(output))
+        BatchTsvProcessor.write_cvs(str(spreadsheets_dir), str(output))
 
         cv_file = output.join("AMF_product_variable.json")
         assert cv_file.check()
@@ -52,7 +52,7 @@ class TestCvGeneration:
         )))
 
         output = tmpdir.mkdir("cvs")
-        BatchCvGenerator.write_cvs(str(s_dir), str(output))
+        BatchTsvProcessor.write_cvs(str(s_dir), str(output))
 
         air_cv = output.join("AMF_my_great_product_air_variable.json")
         spec_cv = output.join("AMF_my_great_product_variable.json")
