@@ -11,7 +11,7 @@ class TestCvGeneration:
         JSON CV
         """
         spreadsheets_dir = tmpdir.mkdir("s")
-        prod_dir = spreadsheets_dir.mkdir("product.xlsx")
+        prod_dir = spreadsheets_dir.mkdir("wind-speed.xlsx")
         var_sheet = prod_dir.join("Variables - specific.tsv")
         var_sheet.write(
             "\n".join(("\t".join(x for x in row)) for row in tsv)
@@ -19,11 +19,11 @@ class TestCvGeneration:
         output = tmpdir.mkdir("output")
         BatchTsvProcessor.write_cvs(str(spreadsheets_dir), str(output))
 
-        cv_file = output.join("AMF_product_variable.json")
+        cv_file = output.join("AMF_product_wind_speed_variable.json")
         assert cv_file.check()
         obj = json.load(cv_file)
-        assert "product_variable" in obj
-        return obj["product_variable"]
+        assert "product_wind_speed_variable" in obj
+        return obj["product_wind_speed_variable"]
 
     def test_basic(self, tmpdir):
         # variables
@@ -54,9 +54,9 @@ class TestCvGeneration:
         output = tmpdir.mkdir("cvs")
         BatchTsvProcessor.write_cvs(str(s_dir), str(output))
 
-        air_cv = output.join("AMF_my_great_product_air_variable.json")
-        spec_cv = output.join("AMF_my_great_product_variable.json")
-        dim_cv = output.join("AMF_other_cool_product_dimension.json")
+        air_cv = output.join("AMF_product_my_great_product_variable_air.json")
+        spec_cv = output.join("AMF_product_my_great_product_variable.json")
+        dim_cv = output.join("AMF_product_other_cool_product_dimension.json")
         assert air_cv.check()
         assert spec_cv.check()
         assert dim_cv.check()
@@ -70,7 +70,7 @@ class TestCvGeneration:
 
         # check variables - air CV
         assert decoded[0] == {
-            "my_great_product_air_variable": {
+            "product_my_great_product_variable_air": {
                 "wind_speed": {
                     "name": "wind_speed",
                     "type": "float32"
@@ -83,7 +83,7 @@ class TestCvGeneration:
         }
         # check dimensions CV
         assert decoded[2] == {
-            "other_cool_product_dimension": {
+            "product_other_cool_product_dimension": {
                 "layer_index": {
                     "length": "<i>",
                     "units": "1"

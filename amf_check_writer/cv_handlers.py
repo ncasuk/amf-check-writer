@@ -38,11 +38,11 @@ class BaseCvHandler:
         # namespace for this CV needs to be unique across all products, so
         # include product name, category name (if not the default 'specific')
         # and CV type name
-        ns = self.product_name
+        ns = "product_{prod}_{type}".format(prod=self.product_name,
+                                            type=self.cv_type_name)
         category = category.lower()
         if category != "specific":
             ns += "_" + category
-        ns += "_" + self.cv_type_name
         self.namespace = ns
 
         reader = DictReader(self.tsv_file, delimiter="\t")

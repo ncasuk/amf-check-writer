@@ -1,5 +1,14 @@
 # amf-check-writer
 
+(This README is out of date whilst work is in progress)
+
+**TODO:**
+
+* Update installation instructions (get `cc-yaml`, no need to `pyessv-writer-amf` etc)
+* Document file naming scheme for CV and JSON files
+
+---
+
 This repo contains scripts to generate python checks suites for `compliance-checker`
 based on specifications for AMF data in spreadsheets in Google Drive.
 
