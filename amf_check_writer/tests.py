@@ -1,9 +1,10 @@
 import json
+import yaml
 
 from amf_check_writer.cv_handlers import BatchTsvProcessor
 
 
-class TestCvGeneration:
+class TestCvGeneration(object):
     def get_var_inner_cv(self, tmpdir, tsv):
         """
         Create a TSV from the given list of lists of columns, and process it
@@ -126,3 +127,79 @@ class TestCvGeneration:
             ["", "", "  "],
             ["", "type", "float32 "]
         ]) == {"wind_speed": {"name": "wind_speed", "type": "float32"}}
+
+
+class TestYamlGeneration(object):
+    def test_basic(self, tmpdir):
+        s_dir = tmpdir.mkdir("spreadsheets")
+        prod = s_dir.mkdir("my-great-product.xlsx")
+        air = prod.join("Variables - Specific.tsv")
+        air.write("\n".join((
+            "Variable\tAttribute\tValue",
+            "wind_speed\t\t",
+            "\tname\twind_speed",
+            "\ttype\tfloat32",
+            "eastward_wind\t\t",
+            "\tname\teastward_wind",
+            "\ttype\tfloat32",
+            "\tunits\tm s-1"
+        )))
+
+        output = tmpdir.mkdir("yaml")
+        BatchTsvProcessor.write_yaml(str(s_dir), str(output))
+
+        output_yml = output.join("amf_product_my_great_product_variable.yml")
+        assert output_yml.check()
+
+        try:
+            decoded = yaml.load(output_yml.read())
+        except yaml.parser.ParserError:
+            assert False, "{} is invalid YAML".format(str(output_yml))
+
+        # check variables - air CV
+        print(json.dumps(decoded, indent=4))
+        assert decoded == {
+            "suite_name": "product_my_great_product_variable_checks",
+            "checks": [
+                {
+                    "check_id": "check_wind_speed_variable_attrs",
+                    "check_name": "checklib.register.nc_file_checks_register.NCVariableMetadataCheck",
+                    "comments": "Checks the variable attributes for 'wind_speed'",
+                    "parameters": {
+                        "pyessv_namespace": "product_my_great_product_variable",
+                        "var_id": "wind_speed",
+                        "vocabulary_ref": "ncas:amf"
+                    }
+                },
+                {
+                    "check_id": "check_wind_speed_variable_type",
+                    "check_name": "checklib.register.nc_file_checks_register.VariableTypeCheck",
+                    "comments": "Checks the type of variable 'wind_speed'",
+                    "parameters": {
+                        "var_id": "wind_speed",
+                        "dtype": "float32",
+                        "vocabulary_ref": "ncas:amf"
+                    }
+                },
+                {
+                    "check_id": "check_eastward_wind_variable_attrs",
+                    "check_name": "checklib.register.nc_file_checks_register.NCVariableMetadataCheck",
+                    "comments": "Checks the variable attributes for 'eastward_wind'",
+                    "parameters": {
+                        "pyessv_namespace": "product_my_great_product_variable",
+                        "var_id": "eastward_wind",
+                        "vocabulary_ref": "ncas:amf"
+                    }
+                },
+                {
+                    "check_id": "check_eastward_wind_variable_type",
+                    "check_name": "checklib.register.nc_file_checks_register.VariableTypeCheck",
+                    "comments": "Checks the type of variable 'eastward_wind'",
+                    "parameters": {
+                        "var_id": "eastward_wind",
+                        "dtype": "float32",
+                        "vocabulary_ref": "ncas:amf"
+                    }
+                },
+            ]
+        }

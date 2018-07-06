@@ -71,7 +71,7 @@ class BaseCvHandler:
             "suite_name": "{}_checks".format(self.namespace),
             "checks": list(self.get_yaml_checks(self.cv))
         }
-        outpath = os.path.join(outdir, "amf-{}.yml".format(self.namespace))
+        outpath = os.path.join(outdir, "amf_{}.yml".format(self.namespace))
         print("Writing {}".format(outpath))
         with open(outpath, "w") as yml_file:
             yaml.dump(yml, yml_file)
