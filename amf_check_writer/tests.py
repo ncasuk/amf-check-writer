@@ -1,7 +1,12 @@
+"""
+Tests to add:
+- CVParseError raised when dimensions sheet is empty, invalid var name
+"""
+import os
 import json
 import yaml
 
-from amf_check_writer.cv_handlers import BatchTsvProcessor
+from amf_check_writer.spreadsheet_handler import SpreadsheetHandler
 
 
 class TestCvGeneration(object):
@@ -12,13 +17,16 @@ class TestCvGeneration(object):
         JSON CV
         """
         spreadsheets_dir = tmpdir.mkdir("s")
-        prod_dir = spreadsheets_dir.mkdir("wind-speed.xlsx")
-        var_sheet = prod_dir.join("Variables - specific.tsv")
+        prod_dir = (spreadsheets_dir.mkdir("Product Definition Spreadsheets")
+                                    .mkdir("wind-speed")
+                                    .mkdir("wind-speed.xlsx"))
+        var_sheet = prod_dir.join("Variables - Specific.tsv")
         var_sheet.write(
             "\n".join(("\t".join(x for x in row)) for row in tsv)
         )
         output = tmpdir.mkdir("output")
-        BatchTsvProcessor.write_cvs(str(spreadsheets_dir), str(output))
+        sh = SpreadsheetHandler(str(spreadsheets_dir))
+        sh.write_cvs(str(output))
 
         cv_file = output.join("AMF_product_wind_speed_variable.json")
         assert cv_file.check()
@@ -29,23 +37,25 @@ class TestCvGeneration(object):
     def test_basic(self, tmpdir):
         # variables
         s_dir = tmpdir.mkdir("spreadsheets")
-        prod = s_dir.mkdir("my-great-product.xlsx")
-        air = prod.join("Variables - Air.tsv")
-        spec = prod.join("Variables - Specific.tsv")
-        for f in (air, spec):
-            f.write("\n".join((
-                "Variable\tAttribute\tValue",
-                "wind_speed\t\t",
-                "\tname\twind_speed",
-                "\ttype\tfloat32",
-                "eastward_wind\t\t",
-                "\tname\teastward_wind",
-                "\tunits\tm s-1"
-            )))
+        prod = s_dir.mkdir("Product Definition Spreadsheets")
+        var = (prod.mkdir("my-great-product").mkdir("my-great-product.xlsx")
+                   .join("Variables - Specific.tsv"))
+        var.write("\n".join((
+            "Variable\tAttribute\tValue",
+            "wind_speed\t\t",
+            "\tname\twind_speed",
+            "\ttype\tfloat32",
+            "eastward_wind\t\t",
+            "\tname\teastward_wind",
+            "\tunits\tm s-1"
+        )))
 
         # dimensions
         prod2 = s_dir.mkdir("other-cool-product")
         dim = prod2.join("Dimensions - Specific.tsv")
+        dim = (prod.mkdir("other-cool-product")
+                   .mkdir("other-cool-product.xlsx")
+                   .join("Dimensions - Specific.tsv"))
         dim.write("\n".join((
             "Name\tLength\tunits",
             "layer_index\t<i>\t1",
@@ -53,25 +63,24 @@ class TestCvGeneration(object):
         )))
 
         output = tmpdir.mkdir("cvs")
-        BatchTsvProcessor.write_cvs(str(s_dir), str(output))
+        sh = SpreadsheetHandler(str(s_dir))
+        sh.write_cvs(str(output))
 
-        air_cv = output.join("AMF_product_my_great_product_variable_air.json")
-        spec_cv = output.join("AMF_product_my_great_product_variable.json")
+        var_cv = output.join("AMF_product_my_great_product_variable.json")
         dim_cv = output.join("AMF_product_other_cool_product_dimension.json")
-        assert air_cv.check()
-        assert spec_cv.check()
+        assert var_cv.check()
         assert dim_cv.check()
 
         decoded = []
-        for f in (air_cv, spec_cv, dim_cv):
+        for f in (var_cv, dim_cv):
             try:
                 decoded.append(json.load(f))
             except json.decoder.JSONDecodeError:
                 assert False, "{} is invalid JSON".format(str(f))
 
-        # check variables - air CV
+        # check variables - variable CV
         assert decoded[0] == {
-            "product_my_great_product_variable_air": {
+            "product_my_great_product_variable": {
                 "wind_speed": {
                     "name": "wind_speed",
                     "type": "float32"
@@ -83,7 +92,7 @@ class TestCvGeneration(object):
             }
         }
         # check dimensions CV
-        assert decoded[2] == {
+        assert decoded[1] == {
             "product_other_cool_product_dimension": {
                 "layer_index": {
                     "length": "<i>",
@@ -133,8 +142,10 @@ class TestYamlGeneration(object):
     def test_basic(self, tmpdir):
         s_dir = tmpdir.mkdir("spreadsheets")
         prod = s_dir.mkdir("my-great-product.xlsx")
-        air = prod.join("Variables - Specific.tsv")
-        air.write("\n".join((
+        var = (s_dir.mkdir("Product Definition Spreadsheets")
+                    .mkdir("my-great-product").mkdir("my-great-product.xlsx")
+                    .join("Variables - Specific.tsv"))
+        var.write("\n".join((
             "Variable\tAttribute\tValue",
             "wind_speed\t\t",
             "\tname\twind_speed",
@@ -146,9 +157,10 @@ class TestYamlGeneration(object):
         )))
 
         output = tmpdir.mkdir("yaml")
-        BatchTsvProcessor.write_yaml(str(s_dir), str(output))
+        sh = SpreadsheetHandler(str(s_dir))
+        sh.write_yaml(str(output))
 
-        output_yml = output.join("amf_product_my_great_product_variable.yml")
+        output_yml = output.join("AMF_product_my_great_product_variable.yml")
         assert output_yml.check()
 
         try:
@@ -156,8 +168,6 @@ class TestYamlGeneration(object):
         except yaml.parser.ParserError:
             assert False, "{} is invalid YAML".format(str(output_yml))
 
-        # check variables - air CV
-        print(json.dumps(decoded, indent=4))
         assert decoded == {
             "suite_name": "product_my_great_product_variable_checks",
             "checks": [

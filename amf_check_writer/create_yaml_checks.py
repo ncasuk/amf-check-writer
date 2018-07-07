@@ -6,7 +6,7 @@ import sys
 import os
 import argparse
 
-from amf_check_writer.cv_handlers import BatchTsvProcessor
+from amf_check_writer.spreadsheet_handler import SpreadsheetHandler
 
 
 def main():
@@ -27,7 +27,8 @@ def main():
     if not os.path.isdir(args.output_dir):
         os.mkdir(args.output_dir)
 
-    BatchTsvProcessor.write_yaml(args.spreadsheets_dir, args.output_dir)
+    sh = SpreadsheetHandler(args.spreadsheets_dir)
+    sh.write_yaml(args.output_dir)
 
 if __name__ == "__main__":
     main()

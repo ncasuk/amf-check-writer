@@ -5,6 +5,7 @@
 **TODO:**
 
 * Update installation instructions (get `cc-yaml`, no need to `pyessv-writer-amf` etc)
+* Provide more helpful instructions for getting Google API credentials
 * Document file naming scheme for CV and JSON files
 
 ---
