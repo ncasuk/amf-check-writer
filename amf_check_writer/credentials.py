@@ -41,6 +41,11 @@ def get_credentials(api):
     """
     info = config[api]
 
+    client_secret_file = info["client_secret_file"]
+    if not os.path.isfile(client_secret_file):
+        raise IOError("Client secret file not found at '{}'. See instructions "
+                      "in README.md".format(client_secret_file))
+
     home_dir = os.path.expanduser('~')
     credential_dir = os.path.join(home_dir, '.credentials')
     if not os.path.exists(credential_dir):
@@ -51,7 +56,7 @@ def get_credentials(api):
     store = Storage(credential_path)
     credentials = store.get()
     if not credentials or credentials.invalid:
-        flow = client.flow_from_clientsecrets(info["client_secret_file"], info["scopes"])
+        flow = client.flow_from_clientsecrets(client_secret_file, info["scopes"])
         flow.user_agent = info["app_name"]
         flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
         credentials = tools.run_flow(flow, store, flags)
