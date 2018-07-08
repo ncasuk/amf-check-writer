@@ -18,8 +18,6 @@ class BaseTest(object):
         s.mkdir("Common.xlsx")
         s.mkdir("Product Definition Spreadsheets")
         vars_sheet = s.mkdir("Vocabularies")
-        vars_sheet.join("Instrument Name & Descriptors.tsv").write("")
-        vars_sheet.join("Data Products.tsv").write("")
         return s
 
 
