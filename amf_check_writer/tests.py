@@ -19,6 +19,7 @@ class BaseTest(object):
         s.mkdir("Product Definition Spreadsheets")
         vars_sheet = s.mkdir("Vocabularies")
         vars_sheet.join("Instrument Name & Descriptors.tsv").write("")
+        vars_sheet.join("Data Products.tsv").write("")
         return s
 
 
@@ -309,7 +310,6 @@ class TestVocabulariesSheet(BaseTest):
         sh.write_cvs(str(output))
         instr_cv = output.join("AMF_instrument.json")
         assert instr_cv.check()
-        print(instr_cv.read())
         assert json.load(instr_cv) == {
             "instrument": {
                 "ncas-radar-wind-profiler-1": {
@@ -333,4 +333,31 @@ class TestVocabulariesSheet(BaseTest):
                     "description": "NCAS Automatic Weather Station unit 7"
                 }
             }
+        }
+
+    def test_product(self, spreadsheets_dir, tmpdir):
+        s_dir = spreadsheets_dir
+        prod = s_dir.join("Vocabularies").join("Data Products.tsv")
+        prod.write("\n".join((
+            "Data Product",
+            "snr-winds",
+            "aerosol-backscatter",
+            "aerosol-extinction",
+            "cloud-base",
+            "o3-concentration-profiles"
+        )))
+
+        sh = SpreadsheetHandler(str(s_dir))
+        output = tmpdir.mkdir("cvs")
+        sh.write_cvs(str(output))
+        prod_cv = output.join("AMF_product.json")
+        assert prod_cv.check()
+        assert json.load(prod_cv) == {
+            "product": [
+                "snr-winds",
+                "aerosol-backscatter",
+                "aerosol-extinction",
+                "cloud-base",
+                "o3-concentration-profiles"
+            ]
         }

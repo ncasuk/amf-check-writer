@@ -3,7 +3,7 @@ import os
 import sys
 import re
 
-from amf_check_writer.cvs import (BaseCV, YamlCheckCV, VariablesCV,
+from amf_check_writer.cvs import (BaseCV, YamlCheckCV, VariablesCV, ProductsCV,
                                   InstrumentsCV, DimensionsCV)
 from amf_check_writer.exceptions import CVParseError
 
@@ -12,7 +12,8 @@ SPREADSHEET_NAMES = {
     "products_dir": "Product Definition Spreadsheets",
     "common_spreadsheet": "Common.xlsx",
     "vocabs_spreadsheet": "Vocabularies",
-    "instruments_worksheet": "Instrument Name & Descriptors.tsv"
+    "instruments_worksheet": "Instrument Name & Descriptors.tsv",
+    "data_products_worksheet": "Data Products.tsv"
 }
 
 
@@ -74,6 +75,9 @@ class SpreadsheetHandler(object):
         # Build a list of (cls, tsv_path, facets) for CVs to parse
         to_parse = []
 
+        # TODO: reduce all the duplication in this method and split into
+        # smaller functions
+
         # Get variable/dimension CVs for products
         products_dir = os.path.join(self.path, SPREADSHEET_NAMES["products_dir"])
         if not os.path.isdir(products_dir):
@@ -118,13 +122,26 @@ class SpreadsheetHandler(object):
                 to_parse.append([cls, os.path.join(common_dir, entry), facets])
 
         # Get instruments CV
-        instr_sheet = os.path.join(self.path,
-                                   SPREADSHEET_NAMES["vocabs_spreadsheet"],
+        vocab_sheets_dir = os.path.join(self.path,
+                                        SPREADSHEET_NAMES["vocabs_spreadsheet"])
+        if not os.path.isdir(vocab_sheets_dir):
+            raise IOError("Could not find Vocabularies spreadsheet at '{}'"
+                          .format(vocab_sheets_dir))
+
+        instr_sheet = os.path.join(vocab_sheets_dir,
                                    SPREADSHEET_NAMES["instruments_worksheet"])
         if not os.path.isfile(instr_sheet):
             raise IOError("Could not find instrument descriptors worksheet at "
                           "{}".format(instr_sheet))
         to_parse.append([InstrumentsCV, instr_sheet, ["instrument"]])
+
+        # Get list of data products CV
+        products_sheet = os.path.join(vocab_sheets_dir,
+                                      SPREADSHEET_NAMES["data_products_worksheet"])
+        if not os.path.isfile(products_sheet):
+            raise IOError("Could not find data products worksheet at {}"
+                          .format(products_sheet))
+        to_parse.append([ProductsCV, products_sheet, ["product"]])
 
         # Go through collected files and actually parse them
         for cls, tsv_path, facets in to_parse:
