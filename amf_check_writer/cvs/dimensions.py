@@ -14,11 +14,9 @@ class DimensionsCV(BaseCV):
         cv = {ns: OrderedDict()}
         for row in reader:
             if row["Name"] and row["Length"] and row["units"]:
-                name, length, units = (row[x].strip()
-                                       for x in ("Name", "Length", "units"))
-                cv[ns][name] = {
-                    "length": length,
-                    "units": units
+                cv[ns][row["Name"]] = {
+                    "length": row["Length"],
+                    "units": row["units"]
                 }
         if not cv[ns]:
             raise CVParseError("No dimensions found")

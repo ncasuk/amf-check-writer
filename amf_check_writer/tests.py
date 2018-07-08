@@ -17,6 +17,8 @@ class BaseTest(object):
         s = tmpdir.mkdir("spreadsheets")
         s.mkdir("Common.xlsx")
         s.mkdir("Product Definition Spreadsheets")
+        vars_sheet = s.mkdir("Vocabularies")
+        vars_sheet.join("Instrument Name & Descriptors.tsv").write("")
         return s
 
 
@@ -115,12 +117,21 @@ class TestCvGeneration(BaseTest):
         }
 
     def test_numeric_types(self, spreadsheets_dir):
+        # Check that the appropriate attribute values are converted to floats
         assert self.get_var_inner_cv(spreadsheets_dir, [
             ["Variable", "Attribute", "Value"],
             ["some_var", "", ""],
             ["", "valid_min", "123"],
             ["", "volid_mon", "123"],
         ]) == {"some_var": {"valid_min": 123, "volid_mon": "123"}}
+
+    def test_numeric_types_derived_from_file(self, spreadsheets_dir):
+        # ...unless the value is <derived from file>
+        assert self.get_var_inner_cv(spreadsheets_dir, [
+            ["Variable", "Attribute", "Value"],
+            ["some_var", "", ""],
+            ["", "valid_min", "<derived from file>"],
+        ]) == {"some_var": {"valid_min": "<derived from file>"}}
 
     def test_blank_lines(self, spreadsheets_dir):
         """
@@ -270,6 +281,56 @@ class TestCommonVariablesAndDimensions(BaseTest):
                 "some_air_variable": {
                     "thingy": "this_thing",
                     "type": "float32"
+                }
+            }
+        }
+
+
+class TestVocabulariesSheet(BaseTest):
+    """
+    Test that CVs are generated from the sheets within the 'Vocabularies'
+    spreadsheet
+    """
+    def test_instruments(self, spreadsheets_dir, tmpdir):
+        s_dir = spreadsheets_dir
+        instr = s_dir.join("Vocabularies").join("Instrument Name & Descriptors.tsv")
+        instr.write("\n".join((
+            # Include some missing old names, some multiple names, and
+            # extraneous whitespace
+            "Old Instrument Name\tNew Instrument Name\tDescriptor",
+            "man-radar-1290mhz\tncas-radar-wind-profiler-1\tNCAS Mobile Radar Wind Profiler unit 1",
+            "\tncas-ceilometer-4\t NCAS Lidar Ceilometer unit 4",
+            "man-o3lidar\tncas-o3-lidar-1\tNCAS Mobile O3 lidar unit 1",
+            "cv-met-tower, cv-met-webdaq\tncas-aws-7\tNCAS Automatic Weather Station unit 7"
+        )))
+
+        sh = SpreadsheetHandler(str(s_dir))
+        output = tmpdir.mkdir("cvs")
+        sh.write_cvs(str(output))
+        instr_cv = output.join("AMF_instrument.json")
+        assert instr_cv.check()
+        print(instr_cv.read())
+        assert json.load(instr_cv) == {
+            "instrument": {
+                "ncas-radar-wind-profiler-1": {
+                    "instrument_id": "ncas-radar-wind-profiler-1",
+                    "previous_instrument_ids": ["man-radar-1290mhz"],
+                    "description": "NCAS Mobile Radar Wind Profiler unit 1"
+                },
+                "ncas-ceilometer-4": {
+                    "instrument_id": "ncas-ceilometer-4",
+                    "previous_instrument_ids": [],
+                    "description": "NCAS Lidar Ceilometer unit 4"
+                },
+                "ncas-o3-lidar-1": {
+                    "instrument_id": "ncas-o3-lidar-1",
+                    "previous_instrument_ids": ["man-o3lidar"],
+                    "description": "NCAS Mobile O3 lidar unit 1"
+                },
+                "ncas-aws-7": {
+                    "instrument_id": "ncas-aws-7",
+                    "previous_instrument_ids": ["cv-met-tower", "cv-met-webdaq"],
+                    "description": "NCAS Automatic Weather Station unit 7"
                 }
             }
         }

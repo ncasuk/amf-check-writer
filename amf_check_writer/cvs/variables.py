@@ -30,8 +30,7 @@ class VariablesCV(YamlCheckCV):
 
             elif row["Attribute"] and row["Value"]:
                 attr = row["Attribute"]
-                # Some of the sheets have extraneous whitespace...
-                value = row["Value"].strip()
+                value = row["Value"]
                 if attr in self.NUMERIC_TYPES and not value.startswith("<"):
                     value = float(value)
                 cv[ns][current_var][attr] = value

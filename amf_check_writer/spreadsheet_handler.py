@@ -4,8 +4,16 @@ import sys
 import re
 
 from amf_check_writer.cvs import (BaseCV, YamlCheckCV, VariablesCV,
-                                  DimensionsCV)
+                                  InstrumentsCV, DimensionsCV)
 from amf_check_writer.exceptions import CVParseError
+
+
+SPREADSHEET_NAMES = {
+    "products_dir": "Product Definition Spreadsheets",
+    "common_spreadsheet": "Common.xlsx",
+    "vocabs_spreadsheet": "Vocabularies",
+    "instruments_worksheet": "Instrument Name & Descriptors.tsv"
+}
 
 
 class SpreadsheetHandler(object):
@@ -13,9 +21,6 @@ class SpreadsheetHandler(object):
     Manage a collection of AMF spreadsheets from which CV files and YAML checks
     can be generated
     """
-
-    PRODUCTS_DIR = "Product Definition Spreadsheets"
-    COMMON_SPREADSHEET = "Common.xlsx"
 
     def __init__(self, spreadsheets_dir):
         self.path = spreadsheets_dir
@@ -70,7 +75,7 @@ class SpreadsheetHandler(object):
         to_parse = []
 
         # Get variable/dimension CVs for products
-        products_dir = os.path.join(self.path, self.PRODUCTS_DIR)
+        products_dir = os.path.join(self.path, SPREADSHEET_NAMES["products_dir"])
         if not os.path.isdir(products_dir):
             raise IOError("Could not find product definition spreadsheets at "
                           "'{}'".format(products_dir))
@@ -94,7 +99,7 @@ class SpreadsheetHandler(object):
                     to_parse.append([cls, full_path, facets])
 
         # Get common variable/dimension CVs
-        common_dir = os.path.join(self.path, self.COMMON_SPREADSHEET)
+        common_dir = os.path.join(self.path, SPREADSHEET_NAMES["common_spreadsheet"])
         if not os.path.isdir(common_dir):
             raise IOError("Could not find common variables/dimensions "
                           "spreadsheet at '{}'".format(common_dir))
@@ -111,6 +116,15 @@ class SpreadsheetHandler(object):
                           var_dim_type_mapping[cv_type]["name"],
                           match.group("deployment_mode").lower()]
                 to_parse.append([cls, os.path.join(common_dir, entry), facets])
+
+        # Get instruments CV
+        instr_sheet = os.path.join(self.path,
+                                   SPREADSHEET_NAMES["vocabs_spreadsheet"],
+                                   SPREADSHEET_NAMES["instruments_worksheet"])
+        if not os.path.isfile(instr_sheet):
+            raise IOError("Could not find instrument descriptors worksheet at "
+                          "{}".format(instr_sheet))
+        to_parse.append([InstrumentsCV, instr_sheet, ["instrument"]])
 
         # Go through collected files and actually parse them
         for cls, tsv_path, facets in to_parse:
