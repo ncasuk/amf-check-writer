@@ -15,6 +15,7 @@ class SpreadsheetHandler(object):
     """
 
     PRODUCTS_DIR = "Product Definition Spreadsheets"
+    COMMON_SPREADSHEET = "Common.xlsx"
 
     def __init__(self, spreadsheets_dir):
         self.path = spreadsheets_dir
@@ -65,33 +66,60 @@ class SpreadsheetHandler(object):
                            class
         :return:           an iterator of instances of subclasses of `BaseCV`
         """
-        # Get product CVs
+        # Build a list of (cls, tsv_path, facets) for CVs to parse
+        to_parse = []
+
+        # Get variable/dimension CVs for products
         products_dir = os.path.join(self.path, self.PRODUCTS_DIR)
         if not os.path.isdir(products_dir):
-            print("WARNING: Could not find product definition spreadsheets at "
-                  "'{}'".format(products_dir), file=sys.stderr)
+            raise IOError("Could not find product definition spreadsheets at "
+                          "'{}'".format(products_dir))
 
         product_sheet_regex = re.compile(
             r"(?P<name>[a-zA-Z-]+)/(?P=name)\.xlsx/(?P<type>Variables|Dimensions) - Specific.tsv$"
         )
+        var_dim_type_mapping = {
+            "Variables": {"name": "variable", "cls": VariablesCV},
+            "Dimensions": {"name": "dimension", "cls": DimensionsCV},
+        }
         for dirpath, dirnames, filenames in os.walk(products_dir):
             for fname in filenames:
                 full_path = os.path.join(dirpath, fname)
-                rel_path = os.path.relpath(full_path, start=products_dir)
-                match = product_sheet_regex.match(rel_path)
+                match = product_sheet_regex.search(full_path)
                 if match:
                     prod_name = match.group("name").replace("-", "_")
                     cv_type = match.group("type")
-                    cls = VariablesCV if cv_type == "Variables" else DimensionsCV
-                    facets = ["product", prod_name, cv_type.lower()[:-1]]
+                    cls = var_dim_type_mapping[cv_type]["cls"]
+                    facets = ["product", prod_name, var_dim_type_mapping[cv_type]["name"]]
+                    to_parse.append([cls, full_path, facets])
 
-                    if base_class and not base_class in cls.__bases__:
-                        continue
+        # Get common variable/dimension CVs
+        common_dir = os.path.join(self.path, self.COMMON_SPREADSHEET)
+        if not os.path.isdir(common_dir):
+            raise IOError("Could not find common variables/dimensions "
+                          "spreadsheet at '{}'".format(common_dir))
 
-                    with open(full_path) as tsv_file:
-                        try:
-                            yield cls(tsv_file, facets)
-                        except CVParseError as ex:
-                            print("WARNING: Failed to parse '{}': {}"
-                                  .format(full_path, ex),
-                                  file=sys.stderr)
+        common_sheet_regex = re.compile(
+            r"(?P<type>Variables|Dimensions) - (?P<deployment_mode>[a-zA-Z]+).tsv"
+        )
+        for entry in os.listdir(common_dir):
+            match = common_sheet_regex.match(entry)
+            if match:
+                cv_type = match.group("type")
+                cls = var_dim_type_mapping[cv_type]["cls"]
+                facets = ["product", "common",
+                          var_dim_type_mapping[cv_type]["name"],
+                          match.group("deployment_mode").lower()]
+                to_parse.append([cls, os.path.join(common_dir, entry), facets])
+
+        # Go through collected files and actually parse them
+        for cls, tsv_path, facets in to_parse:
+            if base_class and base_class not in cls.__bases__:
+                continue
+
+            with open(tsv_path) as tsv_file:
+                try:
+                    yield cls(tsv_file, facets)
+                except CVParseError as ex:
+                    print("WARNING: Failed to parse '{}': {}"
+                          .format(full_path, ex), file=sys.stderr)

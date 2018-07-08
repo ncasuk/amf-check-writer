@@ -6,26 +6,35 @@ import os
 import json
 import yaml
 
+import pytest
+
 from amf_check_writer.spreadsheet_handler import SpreadsheetHandler
 
 
-class TestCvGeneration(object):
-    def get_var_inner_cv(self, tmpdir, tsv):
+class BaseTest(object):
+    @pytest.fixture
+    def spreadsheets_dir(self, tmpdir):
+        s = tmpdir.mkdir("spreadsheets")
+        s.mkdir("Common.xlsx")
+        s.mkdir("Product Definition Spreadsheets")
+        return s
+
+
+class TestCvGeneration(BaseTest):
+    def get_var_inner_cv(self, s_dir, tsv):
         """
         Create a TSV from the given list of lists of columns, and process it
         as a variable TSV file. Return the inner dictionary of the generated
         JSON CV
         """
-        spreadsheets_dir = tmpdir.mkdir("s")
-        prod_dir = (spreadsheets_dir.mkdir("Product Definition Spreadsheets")
-                                    .mkdir("wind-speed")
-                                    .mkdir("wind-speed.xlsx"))
+        prod_dir = (s_dir.join("Product Definition Spreadsheets")
+                         .mkdir("wind-speed").mkdir("wind-speed.xlsx"))
         var_sheet = prod_dir.join("Variables - Specific.tsv")
         var_sheet.write(
             "\n".join(("\t".join(x for x in row)) for row in tsv)
         )
-        output = tmpdir.mkdir("output")
-        sh = SpreadsheetHandler(str(spreadsheets_dir))
+        output = s_dir.mkdir("../output")
+        sh = SpreadsheetHandler(str(s_dir))
         sh.write_cvs(str(output))
 
         cv_file = output.join("AMF_product_wind_speed_variable.json")
@@ -34,10 +43,10 @@ class TestCvGeneration(object):
         assert "product_wind_speed_variable" in obj
         return obj["product_wind_speed_variable"]
 
-    def test_basic(self, tmpdir):
+    def test_basic(self, spreadsheets_dir, tmpdir):
         # variables
-        s_dir = tmpdir.mkdir("spreadsheets")
-        prod = s_dir.mkdir("Product Definition Spreadsheets")
+        s_dir = spreadsheets_dir
+        prod = s_dir.join("Product Definition Spreadsheets")
         var = (prod.mkdir("my-great-product").mkdir("my-great-product.xlsx")
                    .join("Variables - Specific.tsv"))
         var.write("\n".join((
@@ -105,19 +114,19 @@ class TestCvGeneration(object):
             }
         }
 
-    def test_numeric_types(self, tmpdir):
-        assert self.get_var_inner_cv(tmpdir, [
+    def test_numeric_types(self, spreadsheets_dir):
+        assert self.get_var_inner_cv(spreadsheets_dir, [
             ["Variable", "Attribute", "Value"],
             ["some_var", "", ""],
             ["", "valid_min", "123"],
             ["", "volid_mon", "123"],
         ]) == {"some_var": {"valid_min": 123, "volid_mon": "123"}}
 
-    def test_blank_lines(self, tmpdir):
+    def test_blank_lines(self, spreadsheets_dir):
         """
         Check blank lines in spreadsheet do not matter
         """
-        assert self.get_var_inner_cv(tmpdir, [
+        assert self.get_var_inner_cv(spreadsheets_dir, [
             ["Variable", "Attribute", "Value"],
             ["wind_speed", "", ""],
             ["", "name", "wind_speed"],
@@ -125,11 +134,11 @@ class TestCvGeneration(object):
             ["", "type", "float32"]
         ]) == {"wind_speed": {"name": "wind_speed", "type": "float32"}}
 
-    def test_ignore_whitespace(self, tmpdir):
+    def test_ignore_whitespace(self, spreadsheets_dir):
         """
         Check that whitespace in cell values are ignored
         """
-        assert self.get_var_inner_cv(tmpdir, [
+        assert self.get_var_inner_cv(spreadsheets_dir, [
             ["Variable", "Attribute", "Value"],
             ["wind_speed", "", ""],
             ["", "name", " wind_speed   "],
@@ -138,11 +147,10 @@ class TestCvGeneration(object):
         ]) == {"wind_speed": {"name": "wind_speed", "type": "float32"}}
 
 
-class TestYamlGeneration(object):
-    def test_basic(self, tmpdir):
-        s_dir = tmpdir.mkdir("spreadsheets")
-        prod = s_dir.mkdir("my-great-product.xlsx")
-        var = (s_dir.mkdir("Product Definition Spreadsheets")
+class TestYamlGeneration(BaseTest):
+    def test_basic(self, spreadsheets_dir, tmpdir):
+        s_dir = spreadsheets_dir
+        var = (s_dir.join("Product Definition Spreadsheets")
                     .mkdir("my-great-product").mkdir("my-great-product.xlsx")
                     .join("Variables - Specific.tsv"))
         var.write("\n".join((
@@ -212,4 +220,56 @@ class TestYamlGeneration(object):
                     }
                 },
             ]
+        }
+
+
+class TestCommonVariablesAndDimensions(BaseTest):
+    def test_common(self, spreadsheets_dir, tmpdir):
+        s_dir = spreadsheets_dir
+        common_dir = s_dir.join("Common.xlsx")
+        var_air = common_dir.join("Variables - Air.tsv")
+        var_sea = common_dir.join("Variables - Sea.tsv")
+        dim_land = common_dir.join("Dimensions - Land.tsv")
+
+        var_air.write("\n".join((
+            "Variable\tAttribute\tValue",
+            "some_air_variable\t\t",
+            "\tthingy\tthis_thing",
+            "\ttype\tfloat32"
+        )))
+        var_sea.write("\n".join((
+            "Variable\tAttribute\tValue",
+            "some_sea_variable\t\t",
+            "\tthingy\tthat_thing",
+            "\ttype\tstring"
+        )))
+        dim_land.write("\n".join((
+            "Name\tLength\tunits",
+            "some_dim\t42\tm"
+        )))
+
+        sh = SpreadsheetHandler(str(s_dir))
+
+        cv_output = tmpdir.mkdir("cvs")
+        yaml_output = tmpdir.mkdir("yaml")
+        sh.write_cvs(str(cv_output))
+        sh.write_yaml(str(yaml_output))
+
+        # Check CV and YAML files exist
+        var_air_output = cv_output.join("AMF_product_common_variable_air.json")
+        assert var_air_output.check()
+        assert cv_output.join("AMF_product_common_variable_sea.json").check()
+        assert cv_output.join("AMF_product_common_dimension_land.json").check()
+
+        assert yaml_output.join("AMF_product_common_variable_air.yml").check()
+        assert yaml_output.join("AMF_product_common_variable_sea.yml").check()
+
+        # Check the content of one of the CVs
+        assert json.load(var_air_output) == {
+            "product_common_variable_air": {
+                "some_air_variable": {
+                    "thingy": "this_thing",
+                    "type": "float32"
+                }
+            }
         }
