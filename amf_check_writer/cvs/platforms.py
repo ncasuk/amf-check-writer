@@ -21,4 +21,3 @@ class PlatformsCV(BaseCV):
                 "description": row["Platform Description"]
             }
         return cv
-

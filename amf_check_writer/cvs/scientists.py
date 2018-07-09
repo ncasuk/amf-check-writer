@@ -1,5 +1,4 @@
 from __future__ import print_function
-import sys
 from collections import OrderedDict
 
 from amf_check_writer.cvs.base import BaseCV
@@ -18,4 +17,3 @@ class ScientistsCV(BaseCV):
                 "orcid": row["orcid"] or None
             }
         return cv
-

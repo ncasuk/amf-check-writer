@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 from amf_check_writer.cvs.base import BaseCV
 
 
