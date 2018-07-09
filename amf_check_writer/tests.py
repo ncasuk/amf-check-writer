@@ -211,19 +211,32 @@ class TestYamlGeneration(BaseTest):
             "\tunits\tm s-1"
         )))
 
+        dim = (s_dir.join("Product Definition Spreadsheets")
+                    .join("my-great-product").join("my-great-product.xlsx")
+                    .join("Dimensions - Specific.tsv"))
+        dim.write("\n".join((
+            "Name\tLength\tunits",
+            "one\t1\tm",
+            "two\t2\tkm"
+        )))
+
         output = tmpdir.mkdir("yaml")
         sh = SpreadsheetHandler(str(s_dir))
         sh.write_yaml(str(output))
 
-        output_yml = output.join("AMF_product_my_great_product_variable.yml")
-        assert output_yml.check()
+        var_output_yml = output.join("AMF_product_my_great_product_variable.yml")
+        dim_output_yml = output.join("AMF_product_my_great_product_dimension.yml")
+        assert var_output_yml.check()
+        assert dim_output_yml.check()
 
-        try:
-            decoded = yaml.load(output_yml.read())
-        except yaml.parser.ParserError:
-            assert False, "{} is invalid YAML".format(str(output_yml))
+        decoded = []
+        for f in (var_output_yml, dim_output_yml):
+            try:
+                decoded.append(yaml.load(f.read()))
+            except yaml.parser.ParserError:
+                assert False, "{} is invalid YAML".format(str(f))
 
-        assert decoded == {
+        assert decoded[0] == {
             "suite_name": "product_my_great_product_variable_checks",
             "checks": [
                 {
@@ -266,6 +279,32 @@ class TestYamlGeneration(BaseTest):
                         "vocabulary_ref": "ncas:amf"
                     }
                 },
+            ]
+        }
+
+        assert decoded[1] == {
+            "suite_name": "product_my_great_product_dimension_checks",
+            "checks": [
+                {
+                    "check_id": "check_one_dimension_attrs",
+                    "check_name": "checklib.register.nc_file_checks_register.NetCDFDimensionCheck",
+                    "comments": "Checks the dimension attributes for 'one'",
+                    "parameters": {
+                        "pyessv_namespace": "product_my_great_product_dimension",
+                        "dim_id": "one",
+                        "vocabulary_ref": "ncas:amf"
+                    }
+                },
+                {
+                    "check_id": "check_two_dimension_attrs",
+                    "check_name": "checklib.register.nc_file_checks_register.NetCDFDimensionCheck",
+                    "comments": "Checks the dimension attributes for 'two'",
+                    "parameters": {
+                        "pyessv_namespace": "product_my_great_product_dimension",
+                        "dim_id": "two",
+                        "vocabulary_ref": "ncas:amf"
+                    }
+                }
             ]
         }
 

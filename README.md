@@ -8,6 +8,11 @@
 * Provide more helpful instructions for getting Google API credentials
 * Document file naming scheme for CV and JSON files
 
+provisional installation instructions:
+* install JAP
+* yum install python27-netCDF4 python27-iris python27-cf python27-virtualenv
+              python27-cf_units
+
 ---
 
 This repo contains scripts to generate python checks suites for `compliance-checker`
