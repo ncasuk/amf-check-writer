@@ -7,3 +7,4 @@ PyYAML==3.12
 rsa==3.4.2
 six==1.11.0
 uritemplate==3.0.0
+pyessv==0.4.5.0

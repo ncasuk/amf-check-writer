@@ -533,3 +533,62 @@ class TestVocabulariesSheet(BaseTest):
                 }
             }
         }
+
+
+class TestPyessvGeneration(BaseTest):
+    def test_pyessv_cvs_are_generated(self, spreadsheets_dir, tmpdir):
+        # Create spreadsheets to generate some CVs
+        s_dir = spreadsheets_dir
+
+        # Create scientists CV, to test that @ are allowed in namespaces
+        sci_tsv = s_dir.join("Vocabularies").join("Creators.tsv")
+        sci_tsv.write("\n".join((
+            "name\temail\torcid\tconfirmed",
+            "Bob Smith\tbob@smith.com\thttps://orcid.org/123\tyes",
+            "Jane Smith\tjane@smith.com\thttps://orcid.org/999\tyes",
+        )))
+
+        # Create products CV, since this is a list rather dict like other CVs
+        prod_tsv = s_dir.join("Vocabularies").join("Data Products.tsv")
+        prod_tsv.write("\n".join((
+            "Data Product",
+            "snr-winds",
+            "aerosol-backscatter"
+        )))
+
+        # Write JSON CVs and pyessv CVs
+        sh = SpreadsheetHandler(str(s_dir))
+        json_cvs_output = tmpdir.mkdir("json_cvs")
+        pyessv_cvs_output = tmpdir.mkdir("pyessv_cvs")
+        sh.write_cvs(str(json_cvs_output), write_pyessv=True,
+                     pyessv_root=str(pyessv_cvs_output))
+
+        root = pyessv_cvs_output.join("ncas")
+        assert root.join("MANIFEST").check()
+        assert root.join("amf").check()
+
+        # Check the contents of some CVs
+        bob_term = root.join("amf").join("scientist").join("bob@smith.com")
+        assert bob_term.check()
+        bob_term_decoded = json.load(bob_term)
+        assert "data" in bob_term_decoded
+        assert bob_term_decoded["data"] == {
+            "primary_email": "bob@smith.com",
+            "previous_emails": [],
+            "name": "Bob Smith",
+            "orcid": "https://orcid.org/123"
+        }
+
+        jane_term = root.join("amf").join("scientist").join("jane@smith.com")
+        assert jane_term.check()
+        jane_term_decoded = json.load(jane_term)
+        assert "data" in jane_term_decoded
+        assert jane_term_decoded["data"] == {
+            "primary_email": "jane@smith.com",
+            "previous_emails": [],
+            "name": "Jane Smith",
+            "orcid": "https://orcid.org/999"
+        }
+
+        product_term = root.join("amf").join("product").join("snr-winds")
+        assert product_term.check()

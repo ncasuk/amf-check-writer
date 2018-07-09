@@ -7,6 +7,7 @@ from collections import namedtuple
 from amf_check_writer.cvs import (BaseCV, YamlCheckCV, VariablesCV, ProductsCV,
                                   PlatformsCV, InstrumentsCV, DimensionsCV,
                                   ScientistsCV)
+from amf_check_writer.pyessv_writer import PyessvWriter
 from amf_check_writer.exceptions import CVParseError
 
 
@@ -46,13 +47,19 @@ class SpreadsheetHandler(object):
     def __init__(self, spreadsheets_dir):
         self.path = spreadsheets_dir
 
-    def write_cvs(self, output_dir):
+    def write_cvs(self, output_dir, write_pyessv=False, pyessv_root=None):
         """
         Write CVs as JSON files
-        :param output_dir: directory in which to write output JSON files
+        :param output_dir:   directory in which to write output JSON files
+        :param write_pyessv: boolean indicating whether to write CVs to pyessv
+                             archive
+        :param pyessv_root:  directory to use as pyessv archive
         """
-        self._write_output_files(self.get_all_cvs(), BaseCV.to_json, output_dir,
-                                 "json")
+        cvs = list(self.get_all_cvs())
+        self._write_output_files(cvs, BaseCV.to_json, output_dir, "json")
+        if write_pyessv:
+            writer = PyessvWriter(pyessv_root=pyessv_root)
+            writer.write_cvs(cvs)
 
     def write_yaml(self, output_dir):
         """
