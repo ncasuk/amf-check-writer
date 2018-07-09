@@ -9,6 +9,8 @@ import yaml
 import pytest
 
 from amf_check_writer.spreadsheet_handler import SpreadsheetHandler
+from amf_check_writer.exceptions import CVParseError
+from amf_check_writer.cvs import VariablesCV
 
 
 class BaseTest(object):
@@ -21,7 +23,7 @@ class BaseTest(object):
         return s
 
 
-class TestCvGeneration(BaseTest):
+class TestVariablesAndDimensionsGeneration(BaseTest):
     def get_var_inner_cv(self, s_dir, tsv):
         """
         Create a TSV from the given list of lists of columns, and process it
@@ -143,6 +145,39 @@ class TestCvGeneration(BaseTest):
             ["", "", ""],
             ["", "type", "float32"]
         ]) == {"wind_speed": {"name": "wind_speed", "type": "float32"}}
+
+    def test_question_marks(self, tmpdir):
+        """
+        Check that an exception is raised if variable names end in ?s
+        """
+        no_q_marks = tmpdir.join("no_q_marks.tsv")
+        no_q_marks.write("\n".join((
+            "Variable\tAttribute\tValue",
+            "wind_speed\t\t",
+            "\ttype\tfloat32",
+        )))
+        q_marks = tmpdir.join("q_marks.tsv")
+        q_marks.write("\n".join((
+            "Variable\tAttribute\tValue",
+            "wind_speed?\t\t",
+            "\ttype\tfloat32",
+        )))
+        triple_q_marks = tmpdir.join("triple_q_marks.tsv")
+        triple_q_marks.write("\n".join((
+            "Variable\tAttribute\tValue",
+            "wind_speed???\t\t",
+            "\ttype\tfloat32",
+        )))
+
+        try:
+            c = VariablesCV(no_q_marks.open(), ["noq"])
+        except CVParseError as ex:
+            assert False, "Undexpected exception: {}".format(ex)
+
+        with pytest.raises(CVParseError):
+            c = VariablesCV(q_marks.open(), ["qm"])
+        with pytest.raises(CVParseError):
+            c = VariablesCV(triple_q_marks.open(), ["tqm"])
 
     def test_ignore_whitespace(self, spreadsheets_dir):
         """

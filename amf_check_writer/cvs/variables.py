@@ -21,7 +21,7 @@ class VariablesCV(YamlCheckCV):
             if row["Variable"]:
                 # Variable names containing ??? cause problems with pyessv,
                 # and are probably not correct anyway
-                if row["Variable"].endswith("???"):
+                if row["Variable"].endswith("?"):
                     raise CVParseError("Invalid variable name '{}'"
                                        .format(row["Variable"]))
 
