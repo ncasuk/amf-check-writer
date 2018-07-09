@@ -443,3 +443,30 @@ class TestVocabulariesSheet(BaseTest):
                 "o3-concentration-profiles"
             ]
         }
+
+    def test_platform(self, spreadsheets_dir, tmpdir):
+        s_dir = spreadsheets_dir
+        plat = s_dir.join("Vocabularies").join("Platforms.tsv")
+        plat.write("\n".join((
+            "Platform ID\tPlatform Description",
+            "wao\tweybourne atmospheric observatory",
+            "cvao\tcape verde atmospheric observatory"
+        )))
+        output = tmpdir.mkdir("cvs")
+        sh = SpreadsheetHandler(str(s_dir))
+        sh.write_cvs(str(output))
+
+        plat_output = output.join("AMF_platform.json")
+        assert plat_output.check()
+        assert json.load(plat_output) == {
+            "platform": {
+                "wao": {
+                    "platform_id": "wao",
+                    "description": "weybourne atmospheric observatory"
+                },
+                "cvao": {
+                    "platform_id": "cvao",
+                    "description": "cape verde atmospheric observatory"
+                }
+            }
+        }

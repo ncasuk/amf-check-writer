@@ -5,7 +5,7 @@ import re
 from collections import namedtuple
 
 from amf_check_writer.cvs import (BaseCV, YamlCheckCV, VariablesCV, ProductsCV,
-                                  InstrumentsCV, DimensionsCV)
+                                  PlatformsCV, InstrumentsCV, DimensionsCV)
 from amf_check_writer.exceptions import CVParseError
 
 
@@ -14,7 +14,8 @@ SPREADSHEET_NAMES = {
     "common_spreadsheet": "Common.xlsx",
     "vocabs_spreadsheet": "Vocabularies",
     "instruments_worksheet": "Instrument Name & Descriptors.tsv",
-    "data_products_worksheet": "Data Products.tsv"
+    "data_products_worksheet": "Data Products.tsv",
+    "platforms_worksheet": "Platforms.tsv"
 }
 
 
@@ -89,24 +90,24 @@ class SpreadsheetHandler(object):
         :return:           an iterator of instances of subclasses of `BaseCV`
         """
         # Static CVs
-        instruments_worksheet = os.path.join(
-            SPREADSHEET_NAMES["vocabs_spreadsheet"],
-            SPREADSHEET_NAMES["instruments_worksheet"]
-        )
-        data_products_worksheet = os.path.join(
-            SPREADSHEET_NAMES["vocabs_spreadsheet"],
-            SPREADSHEET_NAMES["data_products_worksheet"]
-        )
+        def static_path(name):
+            return os.path.join(SPREADSHEET_NAMES["vocabs_spreadsheet"],
+                                SPREADSHEET_NAMES[name])
         cv_parse_infos = [
             CVParseInfo(
-                path=instruments_worksheet,
+                path=static_path("instruments_worksheet"),
                 cls=InstrumentsCV,
                 facets=["instrument"]
             ),
             CVParseInfo(
-                path=data_products_worksheet,
+                path=static_path("data_products_worksheet"),
                 cls=ProductsCV,
                 facets=["product"]
+            ),
+            CVParseInfo(
+                path=static_path("platforms_worksheet"),
+                cls=PlatformsCV,
+                facets=["platform"]
             )
         ]
         cv_parse_infos += self._get_common_var_dim_parse_info()
