@@ -3,8 +3,10 @@ Tests to add:
 - CVParseError raised when dimensions sheet is empty, invalid var name
 """
 import os
+import sys
 import json
 import yaml
+from StringIO import StringIO
 
 import pytest
 
@@ -367,6 +369,53 @@ class TestVocabulariesSheet(BaseTest):
                 }
             }
         }
+
+    def test_duplicate_instrument_id(self, spreadsheets_dir, tmpdir):
+        """
+        Check that if there are two instruments with the same ID, a warning is
+        printed and one of them is overwritten
+        """
+        s_dir = spreadsheets_dir
+        instr = s_dir.join("Vocabularies").join("Instrument Name & Descriptors.tsv")
+        instr.write("\n".join((
+            "Old Instrument Name\tNew Instrument Name\tDescriptor",
+            "old1\tmyinstr\tFirst instrument",
+            "old2\tmyinstr\tSecond instrument"
+        )))
+        output = tmpdir.mkdir("cvs")
+        stderr = StringIO()
+        sh = SpreadsheetHandler(str(s_dir))
+        sys.stderr = stderr
+        sh.write_cvs(str(output))
+        sys.stderr = sys.__stderr__
+
+        instr_output = output.join("AMF_instrument.json")
+        assert instr_output.check()
+        assert json.load(instr_output) == {
+            "instrument": {
+                "myinstr": {
+                    "instrument_id": "myinstr",
+                    "previous_instrument_ids": ["old1"],
+                    "description": "First instrument"
+                }
+            }
+        }
+        stderr_contents = stderr.getvalue().lower()
+        assert "duplicate instrument name" in stderr_contents
+
+        # Normal case: warning not shown
+        instr.write("\n".join((
+            "Old Instrument Name\tNew Instrument Name\tDescriptor",
+            "old1\tmyinstr1\tFirst instrument",
+            "old2\tmyinstr2\tSecond instrument"
+        )))
+        stderr = StringIO()
+        sh = SpreadsheetHandler(str(s_dir))
+        sys.stderr = stderr
+        sh.write_cvs(str(output))
+        sys.stderr = sys.__stderr__
+        stderr_contents = stderr.getvalue().lower()
+        assert "duplicate instrument name" not in stderr_contents
 
     def test_product(self, spreadsheets_dir, tmpdir):
         s_dir = spreadsheets_dir
