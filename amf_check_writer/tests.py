@@ -470,3 +470,66 @@ class TestVocabulariesSheet(BaseTest):
                 }
             }
         }
+
+    def test_scientist(self, spreadsheets_dir, tmpdir):
+        s_dir = spreadsheets_dir
+        plat = s_dir.join("Vocabularies").join("Creators.tsv")
+        plat.write("\n".join((
+            "name\temail\torcid\tconfirmed",
+            # With 'confirmed' column
+            "Bob Smith\tbob@smith.com\thttps://orcid.org/123\tyes",
+            "Bob Smath\tbob@smath.com\thttps://orcid.org/234\tno",
+            # and without
+            "Dave Jones\tdave@jones.com\thttps://orcid.org/345",
+            # Without orcid
+            "Paul Jones\tpaul@jones.com\t\tyes",
+            "Paul Janes\tpaul@janes.com\t",
+            "Paul Junes\tpaul@junes.com"
+        )))
+        output = tmpdir.mkdir("cvs")
+        sh = SpreadsheetHandler(str(s_dir))
+        sh.write_cvs(str(output))
+
+        sci_output = output.join("AMF_scientist.json")
+        assert sci_output.check()
+        print(json.dumps(json.load(sci_output), indent=4))
+        assert json.load(sci_output) == {
+            "scientist": {
+                "bob@smith.com": {
+                    "name": "Bob Smith",
+                    "primary_email": "bob@smith.com",
+                    "previous_emails": [],
+                    "orcid": "https://orcid.org/123"
+                },
+                "bob@smath.com": {
+                    "name": "Bob Smath",
+                    "primary_email": "bob@smath.com",
+                    "previous_emails": [],
+                    "orcid": "https://orcid.org/234"
+                },
+                "dave@jones.com": {
+                    "name": "Dave Jones",
+                    "primary_email": "dave@jones.com",
+                    "previous_emails": [],
+                    "orcid": "https://orcid.org/345"
+                },
+                "paul@jones.com": {
+                    "name": "Paul Jones",
+                    "primary_email": "paul@jones.com",
+                    "previous_emails": [],
+                    "orcid": None
+                },
+                "paul@janes.com": {
+                    "name": "Paul Janes",
+                    "primary_email": "paul@janes.com",
+                    "previous_emails": [],
+                    "orcid": None
+                },
+                "paul@junes.com": {
+                    "name": "Paul Junes",
+                    "primary_email": "paul@junes.com",
+                    "previous_emails": [],
+                    "orcid": None
+                }
+            }
+        }

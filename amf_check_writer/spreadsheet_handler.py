@@ -5,7 +5,8 @@ import re
 from collections import namedtuple
 
 from amf_check_writer.cvs import (BaseCV, YamlCheckCV, VariablesCV, ProductsCV,
-                                  PlatformsCV, InstrumentsCV, DimensionsCV)
+                                  PlatformsCV, InstrumentsCV, DimensionsCV,
+                                  ScientistsCV)
 from amf_check_writer.exceptions import CVParseError
 
 
@@ -15,7 +16,8 @@ SPREADSHEET_NAMES = {
     "vocabs_spreadsheet": "Vocabularies",
     "instruments_worksheet": "Instrument Name & Descriptors.tsv",
     "data_products_worksheet": "Data Products.tsv",
-    "platforms_worksheet": "Platforms.tsv"
+    "platforms_worksheet": "Platforms.tsv",
+    "scientists_worksheet": "Creators.tsv"
 }
 
 
@@ -108,6 +110,11 @@ class SpreadsheetHandler(object):
                 path=static_path("platforms_worksheet"),
                 cls=PlatformsCV,
                 facets=["platform"]
+            ),
+            CVParseInfo(
+                path=static_path("scientists_worksheet"),
+                cls=ScientistsCV,
+                facets=["scientist"]
             )
         ]
         cv_parse_infos += self._get_common_var_dim_parse_info()
