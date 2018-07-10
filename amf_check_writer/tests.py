@@ -308,6 +308,78 @@ class TestYamlGeneration(BaseTest):
             ]
         }
 
+    def test_top_level_product_yaml(self, spreadsheets_dir, tmpdir):
+        """
+        Check that a top level YAML file is written for each product/deployment
+        mode combination, which includes other YAML files
+        """
+        s_dir = spreadsheets_dir
+
+        # Write common variables and dimensions
+        common_dir = s_dir.join("Common.xlsx")
+        common_dir.join("Variables - Air.tsv").write("\n".join((
+            "Variable\tAttribute\tValue",
+            "some_air_variable\t\t",
+            "\ttype\tfloat32"
+        )))
+        common_dir.join("Variables - Land.tsv").write("\n".join((
+            "Variable\tAttribute\tValue",
+            "some_land_variable\t\t",
+            "\ttype\tfloat32"
+        )))
+        common_dir.join("Dimensions - Land.tsv").write("\n".join((
+            "Name\tLength\tunits",
+            "index\t<i>\t1"
+        )))
+
+        # Write product variables and dimensions
+        soil_dir = (s_dir.join("Product Definition Spreadsheets")
+                         .mkdir("soil").mkdir("soil.xlsx"))
+        soil_dir.join("Variables - Specific.tsv").write("\n".join((
+            "Variable\tAttribute\tValue",
+            "soil_var\t\t",
+            "\ttype\tfloat32"
+        )))
+        soil_dir.join("Dimensions - Specific.tsv").write("\n".join((
+            "Name\tLength\tunits",
+            "somedim\t<n>\tK"
+        )))
+
+        sh = SpreadsheetHandler(str(s_dir))
+        yaml_output = tmpdir.mkdir("yaml")
+        sh.write_yaml(str(yaml_output))
+
+        assert yaml_output.join("AMF_product_common_variable_air.yml").check()
+        assert yaml_output.join("AMF_product_common_variable_land.yml").check()
+        assert yaml_output.join("AMF_product_common_dimension_land.yml").check()
+
+        top_level_air = yaml_output.join("AMF_product_soil_air.yml")
+        top_level_land = yaml_output.join("AMF_product_soil_land.yml")
+        assert top_level_air.check()
+        assert top_level_land.check()
+
+        assert yaml.load(top_level_air.read()) == {
+            "suite_name": "product_soil_air_checks",
+            "checks": [
+                # Common checks
+                {"__INCLUDE__": "AMF_product_common_variable_air.yml"},
+                # Product specific
+                {"__INCLUDE__": "AMF_product_soil_dimension.yml"},
+                {"__INCLUDE__": "AMF_product_soil_variable.yml"}
+            ]
+        }
+
+        # Land one should be basically the same as air but s/air/land/, and
+        # there is also common dimensions CV for land
+        assert yaml.load(top_level_land.read()) == {
+            "suite_name": "product_soil_land_checks",
+            "checks": [
+                {"__INCLUDE__": "AMF_product_common_dimension_land.yml"},
+                {"__INCLUDE__": "AMF_product_common_variable_land.yml"},
+                {"__INCLUDE__": "AMF_product_soil_dimension.yml"},
+                {"__INCLUDE__": "AMF_product_soil_variable.yml"}
+            ]
+        }
 
 class TestCommonVariablesAndDimensions(BaseTest):
     def test_common(self, spreadsheets_dir, tmpdir):

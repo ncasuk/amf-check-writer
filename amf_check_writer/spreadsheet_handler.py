@@ -8,7 +8,7 @@ from enum import Enum
 
 from amf_check_writer.cvs import (BaseCV, VariablesCV, ProductsCV, PlatformsCV,
                                   InstrumentsCV, DimensionsCV, ScientistsCV)
-from amf_check_writer.yaml_check import YamlCheck
+from amf_check_writer.yaml_check import YamlCheck, WrapperYamlCheck
 from amf_check_writer.pyessv_writer import PyessvWriter
 from amf_check_writer.exceptions import CVParseError
 
@@ -79,7 +79,39 @@ class SpreadsheetHandler(object):
         """
         # Find CVs that are also YAML checks
         cvs = list(self.get_all_cvs(base_class=YamlCheck))
-        self._write_output_files(cvs, YamlCheck.to_yaml_check, output_dir, "yml")
+        all_checks = []
+        all_checks += cvs
+
+        # Group product CVs by name, and common product CVs by deployment mode
+        product_cvs = {}
+        common_cvs = {}
+        for cv in cvs:
+            if len(cv.facets) > 2 and cv.facets[0] == "product":
+                prod_name = cv.facets[1]
+                if prod_name == "common":
+                    dep_m = cv.facets[-1]
+                    if dep_m not in common_cvs:
+                        common_cvs[dep_m] = []
+                    common_cvs[dep_m].append(cv)
+                else:
+                    if prod_name not in product_cvs:
+                        product_cvs[prod_name] = []
+                    product_cvs[prod_name].append(cv)
+
+        # Create a top-level YAML check for each product/deployment-mode
+        # combination
+        for prod_name, prod_cvs in product_cvs.items():
+            for mode in DeploymentModes:
+                dep_m = mode.value.lower()
+                child_checks = []
+                child_checks += prod_cvs
+                child_checks += common_cvs.get(dep_m, [])
+
+                facets = ["product", prod_name, dep_m]
+                all_checks.append(WrapperYamlCheck(child_checks, facets))
+
+        self._write_output_files(all_checks, YamlCheck.to_yaml_check,
+                                 output_dir, "yml")
 
     def _write_output_files(self, files, callback, output_dir, ext):
         """
