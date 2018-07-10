@@ -1,13 +1,14 @@
 from collections import OrderedDict
 
-from amf_check_writer.cvs.base import YamlCheckCV
+from amf_check_writer.cvs.base import BaseCV
+from amf_check_writer.yaml_check import YamlCheck
 from amf_check_writer.exceptions import CVParseError
 
 
-class DimensionsCV(YamlCheckCV):
+class DimensionsCV(BaseCV, YamlCheck):
     """
     Controlled vocabulary for specifying which dimensions should be present in
-    NetCDF files
+    NetCDF files, and a YAML check for verifying this in actual files.
     """
     def parse_tsv(self, reader):
         ns = self.namespace

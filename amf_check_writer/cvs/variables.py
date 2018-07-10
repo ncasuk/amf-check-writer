@@ -2,14 +2,15 @@ from __future__ import print_function
 import sys
 from collections import OrderedDict
 
-from amf_check_writer.cvs.base import YamlCheckCV
+from amf_check_writer.cvs.base import BaseCV
+from amf_check_writer.yaml_check import YamlCheck
 from amf_check_writer.exceptions import CVParseError
 
 
-class VariablesCV(YamlCheckCV):
+class VariablesCV(BaseCV, YamlCheck):
     """
     Controlled vocabulary for specifying which variables should be present in
-    NetCDF files
+    NetCDF files, and a YAML check for verifying this against actual files.
     """
     # Attributes whose value should be interpreted as a float instead of string
     NUMERIC_TYPES = ("valid_min", "valid_max")

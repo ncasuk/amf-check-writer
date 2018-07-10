@@ -4,11 +4,22 @@ import sys
 import re
 from collections import namedtuple
 
-from amf_check_writer.cvs import (BaseCV, YamlCheckCV, VariablesCV, ProductsCV,
-                                  PlatformsCV, InstrumentsCV, DimensionsCV,
-                                  ScientistsCV)
+from enum import Enum
+
+from amf_check_writer.cvs import (BaseCV, VariablesCV, ProductsCV, PlatformsCV,
+                                  InstrumentsCV, DimensionsCV, ScientistsCV)
+from amf_check_writer.yaml_check import YamlCheck
 from amf_check_writer.pyessv_writer import PyessvWriter
 from amf_check_writer.exceptions import CVParseError
+
+
+class DeploymentModes(Enum):
+    """
+    Enumeration of valid deployment modes
+    """
+    LAND = "Land"
+    SEA = "Sea"
+    AIR = "Air"
 
 
 SPREADSHEET_NAMES = {
@@ -66,27 +77,27 @@ class SpreadsheetHandler(object):
         Write YAML checks for each appropriate CV
         :param output_dir: directory in which to write output YAML files
         """
-        self._write_output_files(self.get_all_cvs(base_class=YamlCheckCV),
-                                 YamlCheckCV.to_yaml_check, output_dir,
-                                 "yml")
+        # Find CVs that are also YAML checks
+        cvs = list(self.get_all_cvs(base_class=YamlCheck))
+        self._write_output_files(cvs, YamlCheck.to_yaml_check, output_dir, "yml")
 
-    def _write_output_files(self, cvs, callback, output_dir, ext):
+    def _write_output_files(self, files, callback, output_dir, ext):
         """
-        Helper method to call a method on a several CVs and write the output to
-        a file
-        :param cvs:        iterable of CV objects
-        :param callback:   method to call for each CV. It is passed the CV
+        Helper method to call a method on a several AmfFile objects and write
+        the output to a file
+        :param files:      iterable of AmfFile objects
+        :param callback:   method to call for each object. It is passed the
                            object as its single argument and should return a
                            string
         :param output_dir: directory in which to write output files
         :param ext:        file extension to use
         """
         count = 0
-        for cv in cvs:
-            fname = cv.get_filename(ext)
+        for f in files:
+            fname = f.get_filename(ext)
             outpath = os.path.join(output_dir, fname)
             with open(outpath, "w") as out_file:
-                out_file.write(callback(cv))
+                out_file.write(callback(f))
                 count += 1
         print("{} files written".format(count))
 
@@ -181,10 +192,10 @@ class SpreadsheetHandler(object):
         CVs
         """
         common_dir = os.path.join(self.path, SPREADSHEET_NAMES["common_spreadsheet"])
-        deployment_modes = ["Land", "Sea", "Air"]
 
         for prefix, obj in self.VAR_DIM_FILENAME_MAPPING.items():
-            for dep_m in deployment_modes:
+            for mode in DeploymentModes:
+                dep_m = mode.value
                 filename = "{type} - {dep_m}.tsv".format(type=prefix, dep_m=dep_m)
                 yield CVParseInfo(
                     path=os.path.join(common_dir, filename),

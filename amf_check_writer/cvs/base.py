@@ -1,26 +1,21 @@
 import json
 from csv import DictReader
 
-import yaml
+from amf_check_writer.base_file import AmfFile
 
 
-class BaseCV(object):
+class BaseCV(AmfFile):
     """
     Base class for a controlled vocabulary instance
     """
-
-    # Character to separate facets in namespace and filenames
-    facet_separator = "_"
-
     def __init__(self, tsv_file, facets):
         """
         :param tsv_file: file object for the input TSV file
         :param facets:   list of facets to give this CV a unique name and
                          pyessv namespace
         """
+        super(BaseCV, self).__init__(facets)
         self.tsv_file = tsv_file
-        self.namespace = self.facet_separator.join(facets)
-
         reader = StripWhitespaceReader(self.tsv_file, delimiter="\t")
         self.cv_dict = self.parse_tsv(reader)
 
@@ -29,11 +24,6 @@ class BaseCV(object):
         Return JSON representation of this CV as a string
         """
         return json.dumps(self.cv_dict, indent=4)
-
-    def get_filename(self, ext):
-        return "AMF{sep}{ns}.{ext}".format(sep=self.facet_separator,
-                                           ns=self.namespace,
-                                           ext=ext)
 
     def parse_tsv(self, reader):
         """
@@ -55,27 +45,3 @@ class StripWhitespaceReader(DictReader):
         # Note: cannot use super because DictReader is an old-style class
         row = DictReader.next(self)
         return {k.strip(): v.strip() if v is not None else v for k, v in row.items()}
-
-
-class YamlCheckCV(BaseCV):
-    """
-    A CV from which a YAML check can be generated
-    """
-
-    def to_yaml_check(self):
-        """
-        Use `get_yaml_checks` to write a YAML check suite for use with
-        cc-yaml
-        :return: the YAML document as a string
-        """
-        return yaml.dump({
-            "suite_name": "{}_checks".format(self.namespace),
-            "checks": list(self.get_yaml_checks())
-        })
-
-    def get_yaml_checks(self):
-        """
-        Return an iterable of check dictionaries for use with cc-yaml check
-        suite. Must be implemented in child classes.
-        """
-        raise NotImplementedError
