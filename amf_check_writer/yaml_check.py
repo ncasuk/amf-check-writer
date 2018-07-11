@@ -38,3 +38,31 @@ class WrapperYamlCheck(YamlCheck):
     def get_yaml_checks(self):
         for check in sorted(self.child_checks, key=attrgetter("namespace")):
             yield {"__INCLUDE__": check.get_filename("yml")}
+
+
+class FileInfoCheck(YamlCheck):
+    """
+    Checks for general properties of files. Note that this is entirely static
+    and does not depend on any data from the spreadsheets
+    """
+    def get_yaml_checks(self):
+        check_package = "checklib.register.file_checks_register"
+
+        size_checks = [
+            ("soft", 2, "LOW"),
+            ("hard", 4, "HIGH")
+        ]
+        for strictness, limit, level in size_checks:
+            yield {
+                "check_id": "check_{}_file_size_limit".format(strictness),
+                "check_name": "{}.FileSizeCheck".format(check_package),
+                "check_level": level,
+                "parameters": {"strictness": strictness, "threshold": limit}
+            }
+
+        yield {
+            "check_id": "check_filename_structure",
+            "check_name": "{}.FileNameStructureCheck".format(check_package),
+            "check_level": "HIGH",
+            "parameters": {"delimiter": "_", "extension": ".nc"}
+        }

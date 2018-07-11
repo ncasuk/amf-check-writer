@@ -8,7 +8,7 @@ from enum import Enum
 
 from amf_check_writer.cvs import (BaseCV, VariablesCV, ProductsCV, PlatformsCV,
                                   InstrumentsCV, DimensionsCV, ScientistsCV)
-from amf_check_writer.yaml_check import YamlCheck, WrapperYamlCheck
+from amf_check_writer.yaml_check import YamlCheck, WrapperYamlCheck, FileInfoCheck
 from amf_check_writer.pyessv_writer import PyessvWriter
 from amf_check_writer.exceptions import CVParseError
 
@@ -82,6 +82,10 @@ class SpreadsheetHandler(object):
         all_checks = []
         all_checks += cvs
 
+        # Add global checks
+        global_checks = [FileInfoCheck(["file_info"])]
+        all_checks += global_checks
+
         # Group product CVs by name, and common product CVs by deployment mode
         product_cvs = {}
         common_cvs = {}
@@ -103,11 +107,8 @@ class SpreadsheetHandler(object):
         for prod_name, prod_cvs in product_cvs.items():
             for mode in DeploymentModes:
                 dep_m = mode.value.lower()
-                child_checks = []
-                child_checks += prod_cvs
-                child_checks += common_cvs.get(dep_m, [])
-
                 facets = ["product", prod_name, dep_m]
+                child_checks = global_checks + prod_cvs + common_cvs.get(dep_m, [])
                 all_checks.append(WrapperYamlCheck(child_checks, facets))
 
         self._write_output_files(all_checks, YamlCheck.to_yaml_check,

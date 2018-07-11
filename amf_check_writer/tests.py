@@ -352,6 +352,7 @@ class TestYamlGeneration(BaseTest):
         assert yaml_output.join("AMF_product_common_variable_air.yml").check()
         assert yaml_output.join("AMF_product_common_variable_land.yml").check()
         assert yaml_output.join("AMF_product_common_dimension_land.yml").check()
+        assert yaml_output.join("AMF_file_info.yml").check()
 
         top_level_air = yaml_output.join("AMF_product_soil_air.yml")
         top_level_land = yaml_output.join("AMF_product_soil_land.yml")
@@ -361,7 +362,9 @@ class TestYamlGeneration(BaseTest):
         assert yaml.load(top_level_air.read()) == {
             "suite_name": "product_soil_air_checks",
             "checks": [
-                # Common checks
+                # Global checks
+                {"__INCLUDE__": "AMF_file_info.yml"},
+                # Common product checks
                 {"__INCLUDE__": "AMF_product_common_variable_air.yml"},
                 # Product specific
                 {"__INCLUDE__": "AMF_product_soil_dimension.yml"},
@@ -374,10 +377,42 @@ class TestYamlGeneration(BaseTest):
         assert yaml.load(top_level_land.read()) == {
             "suite_name": "product_soil_land_checks",
             "checks": [
+                {"__INCLUDE__": "AMF_file_info.yml"},
                 {"__INCLUDE__": "AMF_product_common_dimension_land.yml"},
                 {"__INCLUDE__": "AMF_product_common_variable_land.yml"},
                 {"__INCLUDE__": "AMF_product_soil_dimension.yml"},
                 {"__INCLUDE__": "AMF_product_soil_variable.yml"}
+            ]
+        }
+
+    def test_file_info_yaml_check(self, spreadsheets_dir, tmpdir):
+        sh = SpreadsheetHandler(str(spreadsheets_dir))
+        output = tmpdir.mkdir("yaml")
+        sh.write_yaml(str(output))
+
+        file_info_check = output.join("AMF_file_info.yml")
+        assert file_info_check.check()
+        assert yaml.load(file_info_check.read()) == {
+            "suite_name": "file_info_checks",
+            "checks": [
+                {
+                    "check_id": "check_soft_file_size_limit",
+                    "check_name": "checklib.register.file_checks_register.FileSizeCheck",
+                    "check_level": "LOW",
+                    "parameters": {"threshold": 2, "strictness": "soft"}
+                },
+                {
+                    "check_id": "check_hard_file_size_limit",
+                    "check_name": "checklib.register.file_checks_register.FileSizeCheck",
+                    "check_level": "HIGH",
+                    "parameters": {"threshold": 4, "strictness": "hard"}
+                },
+                {
+                    "check_id": "check_filename_structure",
+                    "check_name": "checklib.register.file_checks_register.FileNameStructureCheck",
+                    "check_level": "HIGH",
+                    "parameters": {"delimiter": "_", "extension": ".nc"}
+                }
             ]
         }
 
