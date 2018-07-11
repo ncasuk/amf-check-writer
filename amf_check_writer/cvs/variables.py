@@ -13,7 +13,7 @@ class VariablesCV(BaseCV, YamlCheck):
     NetCDF files, and a YAML check for verifying this against actual files.
     """
     # Attributes whose value should be interpreted as a float instead of string
-    NUMERIC_TYPES = ("valid_min", "valid_max")
+    NUMERIC_TYPES = ("valid_min", "valid_max", "_FillValue")
 
     def parse_tsv(self, reader):
         ns = self.namespace
