@@ -66,3 +66,15 @@ class FileInfoCheck(YamlCheck):
             "check_level": "HIGH",
             "parameters": {"delimiter": "_", "extension": ".nc"}
         }
+
+
+class FileStructureCheck(YamlCheck):
+    """
+    Check a dataset is a valid NetCDF4 file. Note that this is entirely static
+    and does not depend on any data from the spreadsheets
+    """
+    def get_yaml_checks(self):
+        yield {
+            "check_id": "check_valid_netcdf4_file",
+            "check_name": "checklib.register.nc_file_checks_register.NetCDFFormatCheck",
+        }

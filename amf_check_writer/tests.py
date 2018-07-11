@@ -364,6 +364,7 @@ class TestYamlGeneration(BaseTest):
             "checks": [
                 # Global checks
                 {"__INCLUDE__": "AMF_file_info.yml"},
+                {"__INCLUDE__": "AMF_file_structure.yml"},
                 # Common product checks
                 {"__INCLUDE__": "AMF_product_common_variable_air.yml"},
                 # Product specific
@@ -378,6 +379,7 @@ class TestYamlGeneration(BaseTest):
             "suite_name": "product_soil_land_checks",
             "checks": [
                 {"__INCLUDE__": "AMF_file_info.yml"},
+                {"__INCLUDE__": "AMF_file_structure.yml"},
                 {"__INCLUDE__": "AMF_product_common_dimension_land.yml"},
                 {"__INCLUDE__": "AMF_product_common_variable_land.yml"},
                 {"__INCLUDE__": "AMF_product_soil_dimension.yml"},
@@ -415,6 +417,22 @@ class TestYamlGeneration(BaseTest):
                 }
             ]
         }
+
+    def test_file_structure_yaml_check(self, spreadsheets_dir, tmpdir):
+        sh = SpreadsheetHandler(str(spreadsheets_dir))
+        output = tmpdir.mkdir("yaml")
+        sh.write_yaml(str(output))
+
+        file_structure_check = output.join("AMF_file_structure.yml")
+        assert file_structure_check.check()
+        assert yaml.load(file_structure_check.read()) == {
+            "suite_name": "file_structure_checks",
+            "checks": [{
+                "check_id": "check_valid_netcdf4_file",
+                "check_name": "checklib.register.nc_file_checks_register.NetCDFFormatCheck",
+            }]
+        }
+
 
 class TestCommonVariablesAndDimensions(BaseTest):
     def test_common(self, spreadsheets_dir, tmpdir):

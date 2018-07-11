@@ -8,7 +8,8 @@ from enum import Enum
 
 from amf_check_writer.cvs import (BaseCV, VariablesCV, ProductsCV, PlatformsCV,
                                   InstrumentsCV, DimensionsCV, ScientistsCV)
-from amf_check_writer.yaml_check import YamlCheck, WrapperYamlCheck, FileInfoCheck
+from amf_check_writer.yaml_check import (YamlCheck, WrapperYamlCheck,
+                                         FileInfoCheck, FileStructureCheck)
 from amf_check_writer.pyessv_writer import PyessvWriter
 from amf_check_writer.exceptions import CVParseError
 
@@ -83,7 +84,10 @@ class SpreadsheetHandler(object):
         all_checks += cvs
 
         # Add global checks
-        global_checks = [FileInfoCheck(["file_info"])]
+        global_checks = [
+            FileInfoCheck(["file_info"]),
+            FileStructureCheck(["file_structure"]),
+        ]
         all_checks += global_checks
 
         # Group product CVs by name, and common product CVs by deployment mode
