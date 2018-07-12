@@ -1,6 +1,13 @@
+"""
+Download spreadsheets from Google Drive and save each worksheet as a TSV
+(tab separated values) file.
+
+See the README in amf-check-writer for details.
+"""
 import os
 import sys
 import time
+import argparse
 
 import httplib2
 from apiclient import discovery
@@ -158,14 +165,15 @@ class SheetDownloader(object):
         return callback
 
 def main():
-    if len(sys.argv) < 2:
-        usage = "Usage: {} OUTPUT_DIR".format(sys.argv[0])
-        sys.stderr.write(usage + os.linesep)
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "output_dir",
+        help="Directory to write spreadsheets to"
+    )
+    args = parser.parse_args(sys.argv[1:])
 
     # pop from argv to not get in the way of Google's argparser
-    out_dir = sys.argv.pop(1)
-    downloader = SheetDownloader(out_dir)
+    downloader = SheetDownloader(args.output_dir)
     downloader.run()
 
 if __name__ == "__main__":
