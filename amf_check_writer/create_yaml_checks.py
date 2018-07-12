@@ -1,6 +1,6 @@
 """
-Read JSON controlled vocabulary files and write YAML checks that can be used
-with compliance-checker via the cc-yaml plugin
+Read AMF spreadsheet TSV files and produce YAML checks that can be used with
+IOOS compliance-checker via the cc-yaml plugin and compliance-check-lib
 """
 import sys
 import os

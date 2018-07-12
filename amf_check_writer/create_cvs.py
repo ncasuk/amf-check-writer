@@ -1,6 +1,6 @@
 """
-Read variable/dimension attribute specifications from.tsv files, and produce
-JSON controlled vocabulary files
+Read AMF spreadsheet TSV files, and produce JSON controlled vocabulary files.
+CVs are also saved in pyessv format using pyessv directly.
 """
 import os
 import sys
@@ -18,7 +18,7 @@ def main():
     )
     parser.add_argument(
         "output_dir",
-        help="Directory to write output CVs to"
+        help="Directory to write output JSON CVs to"
     )
 
     # Note: default dir is not actually set in this code -- if not given
