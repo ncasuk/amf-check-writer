@@ -77,4 +77,5 @@ class FileStructureCheck(YamlCheck):
         yield {
             "check_id": "check_valid_netcdf4_file",
             "check_name": "checklib.register.nc_file_checks_register.NetCDFFormatCheck",
+            "parameters": {"format": "NETCDF4_CLASSIC"}
         }
