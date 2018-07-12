@@ -451,10 +451,10 @@ class TestYamlGeneration(BaseTest):
         global_attrs_tsv = s_dir.join("Common.xlsx").join("Global Attributes.tsv")
         global_attrs_tsv.write("\n".join((
             "Name\tDescription\tExample\tFixed Value\tCompliance checking rules\tConvention Providence",
-            "myattr\td\te\tf\tValid email\tc",
-            "aaaa\td\te\tf\tSomething strange here\tc",
+            "myattr\td\te\t\tValid email\tc",
+            "aaaa\td\te\t\tSomething strange here\tc",
             "bbbb\td\te\tf",
-            "otherattr\td\te\tf\tInteger\tc"
+            "otherattr\td\te\t\tInteger\tc"
         )))
 
         sh = SpreadsheetHandler(str(s_dir))
@@ -470,13 +470,16 @@ class TestYamlGeneration(BaseTest):
         assert decoded["suite_name"] == "global_attrs_checks"
         assert len(decoded["checks"]) == 2
 
+        assert decoded["checks"][0]["check_id"] == "check_myattr_global_attribute"
         expected_check_name = "checklib.register.nc_file_checks_register.GlobalAttrRegexCheck"
         assert decoded["checks"][0]["check_name"] == expected_check_name
         assert decoded["checks"][1]["check_name"] == expected_check_name
-        email_regex = GlobalAttrCheck.spreadsheet_value_to_regex("Valid email")
+        attr, email_regex = GlobalAttrCheck.parse_row({
+            "Name": "myattr", "Description": "d", "Example": "e",
+            "Fixed Value": "", "Compliance checking rules": "Valid email",
+            "Convention Providence": ""
+        })
         assert decoded["checks"][0]["parameters"]["regex"] == email_regex
-        int_regex = GlobalAttrCheck.spreadsheet_value_to_regex("Integer")
-        assert decoded["checks"][1]["parameters"]["regex"] == int_regex
 
 
 class TestCommonVariablesAndDimensions(BaseTest):
@@ -832,9 +835,8 @@ class TestGlobalAttributeRegexes(BaseTest):
                     "-1234",
                 ],
                 "no_match": [
-                    "0.0",
+                    "J0",
                     "hello",
-                    "123hello",
                 ]
             },
             "Match: YYYY-MM-DDThh:mm:ss.*": {
@@ -870,14 +872,37 @@ class TestGlobalAttributeRegexes(BaseTest):
                     "v4",
                     "1.3",
                     "v12.3",
-                    "v1.23",
                 ]
             },
         }
 
-        for spreadsheet_value, strings in test_data.items():
-            regex = GlobalAttrCheck.spreadsheet_value_to_regex(spreadsheet_value)
+        for rule, strings in test_data.items():
+            row = {
+                "Name": "some_attribute",
+                "Compliance checking rules": rule
+            }
+            attr, regex = GlobalAttrCheck.parse_row(row)
             for string in strings["match"]:
                 assert re.match(regex, string)
+            for string in strings["no_match"]:
+                assert not re.match(regex, string)
+
+        # Test the exact match rules
+        exact_match_test_data = {
+            "specific value": {
+                "no_match": ["something else", "Specific Value"]
+            },
+            "[a-z]": {
+                "no_match": ["b", "c"]
+            }
+        }
+        for value, strings in exact_match_test_data.items():
+            row = {
+                "Name": "some_attribute",
+                "Compliance checking rules": "Exact match",
+                "Fixed Value": value
+            }
+            attr, regex = GlobalAttrCheck.parse_row(row)
+            assert re.match(regex, value)
             for string in strings["no_match"]:
                 assert not re.match(regex, string)
