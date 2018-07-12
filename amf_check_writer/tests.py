@@ -835,6 +835,9 @@ class TestGlobalAttributeRegexes(BaseTest):
                     "-1234",
                 ],
                 "no_match": [
+                    "14s",
+                    "0.1",
+                    "13.245",
                     "J0",
                     "hello",
                 ]
@@ -872,9 +875,31 @@ class TestGlobalAttributeRegexes(BaseTest):
                     "v4",
                     "1.3",
                     "v12.3",
+                    "v1.23",
+                ]
+            },
+            "Valid URL": {
+                "match": [
+                    "https://www.ncas.ac.uk/en/about-ncas",
+                    "http://ncas.ac.uk",
+                    "https://some-website.co.uk",
+                    "https://some-website.co.uk/one/two/?q=hello",
+                ],
+                "no_match": [
+                    "http://ncas.ac.uk.",
+                    "http://some website.co.uk",
+                    "http:ncas.ac.uk",
+                    "ncas.ac.uk",
+                    "blah",
+                    # Although the name is valid URL, it really means valid
+                    # http[s] URL, so non-HTTP schemes should not be allowed
+                    "ftp://data.somewhere.org",
                 ]
             },
         }
+
+        def to_full_match(regex_str):
+            return "^{}$".format(regex_str)
 
         for rule, strings in test_data.items():
             row = {
@@ -882,6 +907,7 @@ class TestGlobalAttributeRegexes(BaseTest):
                 "Compliance checking rules": rule
             }
             attr, regex = GlobalAttrCheck.parse_row(row)
+            regex = to_full_match(regex)
             for string in strings["match"]:
                 assert re.match(regex, string)
             for string in strings["no_match"]:
@@ -903,6 +929,7 @@ class TestGlobalAttributeRegexes(BaseTest):
                 "Fixed Value": value
             }
             attr, regex = GlobalAttrCheck.parse_row(row)
+            regex = to_full_match(regex)
             assert re.match(regex, value)
             for string in strings["no_match"]:
                 assert not re.match(regex, string)

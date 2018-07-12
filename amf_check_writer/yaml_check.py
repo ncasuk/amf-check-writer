@@ -143,6 +143,7 @@ class GlobalAttrCheck(YamlCheck):
         static_rules = {
             "Integer": r"-?\d+",
             "Valid email": r"[^@\s]+@[^@\s]+\.[^\s@]+",
+            "Valid URL": r"https?://[^\s]+\.[^\s]*[^\s\.](/[^\s]+)?",
             "Match: vN.M": r"v\d\.\d",
             "Match: YYYY-MM-DDThh:mm:ss.*": "\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.*",
         }
