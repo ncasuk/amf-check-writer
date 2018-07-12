@@ -9,7 +9,8 @@ from enum import Enum
 from amf_check_writer.cvs import (BaseCV, VariablesCV, ProductsCV, PlatformsCV,
                                   InstrumentsCV, DimensionsCV, ScientistsCV)
 from amf_check_writer.yaml_check import (YamlCheck, WrapperYamlCheck,
-                                         FileInfoCheck, FileStructureCheck)
+                                         FileInfoCheck, FileStructureCheck,
+                                         GlobalAttrCheck)
 from amf_check_writer.pyessv_writer import PyessvWriter
 from amf_check_writer.exceptions import CVParseError
 
@@ -27,6 +28,7 @@ SPREADSHEET_NAMES = {
     "products_dir": "Product Definition Spreadsheets",
     "common_spreadsheet": "Common.xlsx",
     "vocabs_spreadsheet": "Vocabularies",
+    "global_attrs_worksheet": "Global Attributes.tsv",
     "instruments_worksheet": "Instrument Name & Descriptors.tsv",
     "data_products_worksheet": "Data Products.tsv",
     "platforms_worksheet": "Platforms.tsv",
@@ -88,6 +90,13 @@ class SpreadsheetHandler(object):
             FileInfoCheck(["file_info"]),
             FileStructureCheck(["file_structure"]),
         ]
+        global_attrs_path = os.path.join(
+            self.path, SPREADSHEET_NAMES["common_spreadsheet"],
+            SPREADSHEET_NAMES["global_attrs_worksheet"]
+        )
+        if self._isfile(global_attrs_path):
+            with open(global_attrs_path) as tsv_file:
+                global_checks.append(GlobalAttrCheck(tsv_file, ["global_attrs"]))
         all_checks += global_checks
 
         # Group product CVs by name, and common product CVs by deployment mode
@@ -187,9 +196,7 @@ class SpreadsheetHandler(object):
                 continue
 
             full_path = os.path.join(self.path, path)
-            if not os.path.isfile(full_path):
-                print("WARNING: Expected to find file at '{}'".format(full_path),
-                      file=sys.stderr)
+            if not self._isfile(full_path):
                 continue
 
             with open(full_path) as tsv_file:
@@ -239,3 +246,16 @@ class SpreadsheetHandler(object):
                     cls=obj["cls"],
                     facets=["product", "common", obj["name"], dep_m.lower()]
                 )
+
+    def _isfile(self, path):
+        """
+        Wrapper around os.path.isfile that prints a warning message if path is
+        not a file
+        :param path: filepath to check
+        :return:     boolean (True is path is a file)
+        """
+        isfile = os.path.isfile(path)
+        if not isfile:
+            print("WARNING: Expected to find file at '{}'".format(path),
+                  file=sys.stderr)
+        return isfile

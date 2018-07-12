@@ -44,4 +44,11 @@ class StripWhitespaceReader(DictReader):
     def next(self):
         # Note: cannot use super because DictReader is an old-style class
         row = DictReader.next(self)
-        return {k.strip(): v.strip() if v is not None else v for k, v in row.items()}
+        d = {}
+        for key, val in row.items():
+            if isinstance(key, str):
+                key = key.strip()
+            if isinstance(val, str):
+                val = val.strip()
+            d[key] = val
+        return d

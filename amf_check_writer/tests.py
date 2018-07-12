@@ -3,6 +3,7 @@ Tests to add:
 - CVParseError raised when dimensions sheet is empty, invalid var name
 """
 import os
+import re
 import sys
 import json
 import yaml
@@ -13,6 +14,7 @@ import pytest
 from amf_check_writer.spreadsheet_handler import SpreadsheetHandler
 from amf_check_writer.exceptions import CVParseError
 from amf_check_writer.cvs import VariablesCV
+from amf_check_writer.yaml_check import GlobalAttrCheck
 
 
 class BaseTest(object):
@@ -332,6 +334,12 @@ class TestYamlGeneration(BaseTest):
             "index\t<i>\t1"
         )))
 
+        # Write common global attributes
+        common_dir.join("Global Attributes.tsv").write("\n".join((
+            "Name\tDescription\tExample\tFixed Value\tCompliance checking rules\tConvention Providence",
+            "someattr\ta\tb\tc\tInteger\td"
+        )))
+
         # Write product variables and dimensions
         soil_dir = (s_dir.join("Product Definition Spreadsheets")
                          .mkdir("soil").mkdir("soil.xlsx"))
@@ -353,6 +361,8 @@ class TestYamlGeneration(BaseTest):
         assert yaml_output.join("AMF_product_common_variable_land.yml").check()
         assert yaml_output.join("AMF_product_common_dimension_land.yml").check()
         assert yaml_output.join("AMF_file_info.yml").check()
+        assert yaml_output.join("AMF_file_structure.yml").check()
+        assert yaml_output.join("AMF_global_attrs.yml").check()
 
         top_level_air = yaml_output.join("AMF_product_soil_air.yml")
         top_level_land = yaml_output.join("AMF_product_soil_land.yml")
@@ -365,6 +375,7 @@ class TestYamlGeneration(BaseTest):
                 # Global checks
                 {"__INCLUDE__": "AMF_file_info.yml"},
                 {"__INCLUDE__": "AMF_file_structure.yml"},
+                {"__INCLUDE__": "AMF_global_attrs.yml"},
                 # Common product checks
                 {"__INCLUDE__": "AMF_product_common_variable_air.yml"},
                 # Product specific
@@ -380,6 +391,7 @@ class TestYamlGeneration(BaseTest):
             "checks": [
                 {"__INCLUDE__": "AMF_file_info.yml"},
                 {"__INCLUDE__": "AMF_file_structure.yml"},
+                {"__INCLUDE__": "AMF_global_attrs.yml"},
                 {"__INCLUDE__": "AMF_product_common_dimension_land.yml"},
                 {"__INCLUDE__": "AMF_product_common_variable_land.yml"},
                 {"__INCLUDE__": "AMF_product_soil_dimension.yml"},
@@ -433,6 +445,38 @@ class TestYamlGeneration(BaseTest):
                 "parameters": {"format": "NETCDF4_CLASSIC"}
             }]
         }
+
+    def test_global_attrs_yaml_check(self, spreadsheets_dir, tmpdir):
+        s_dir = spreadsheets_dir
+        global_attrs_tsv = s_dir.join("Common.xlsx").join("Global Attributes.tsv")
+        global_attrs_tsv.write("\n".join((
+            "Name\tDescription\tExample\tFixed Value\tCompliance checking rules\tConvention Providence",
+            "myattr\td\te\tf\tValid email\tc",
+            "aaaa\td\te\tf\tSomething strange here\tc",
+            "bbbb\td\te\tf",
+            "otherattr\td\te\tf\tInteger\tc"
+        )))
+
+        sh = SpreadsheetHandler(str(s_dir))
+        output = tmpdir.mkdir("yaml")
+        sh.write_yaml(str(output))
+
+        global_attr_yaml = output.join("AMF_global_attrs.yml")
+        assert global_attr_yaml.check()
+        decoded = yaml.load(global_attr_yaml.read())
+
+        assert "suite_name" in decoded
+        assert "checks" in decoded
+        assert decoded["suite_name"] == "global_attrs_checks"
+        assert len(decoded["checks"]) == 2
+
+        expected_check_name = "checklib.register.nc_file_checks_register.GlobalAttrRegexCheck"
+        assert decoded["checks"][0]["check_name"] == expected_check_name
+        assert decoded["checks"][1]["check_name"] == expected_check_name
+        email_regex = GlobalAttrCheck.spreadsheet_value_to_regex("Valid email")
+        assert decoded["checks"][0]["parameters"]["regex"] == email_regex
+        int_regex = GlobalAttrCheck.spreadsheet_value_to_regex("Integer")
+        assert decoded["checks"][1]["parameters"]["regex"] == int_regex
 
 
 class TestCommonVariablesAndDimensions(BaseTest):
@@ -757,3 +801,83 @@ class TestPyessvGeneration(BaseTest):
 
         product_term = root.join("amf").join("product").join("snr-winds")
         assert product_term.check()
+
+
+class TestGlobalAttributeRegexes(BaseTest):
+    def test_get_regex(self):
+        test_data = {
+            "String: min 2 characters": {
+                "match": [
+                    "hello",
+                    "h ello",
+                    " hello",
+                    "he",
+                    "09",
+                    "H-E-L-L-o",
+                    "-_",
+                    "h@b.com",
+                ],
+                "no_match": [
+                    "",
+                    "a",
+                    "7",
+                ]
+            },
+            "Integer": {
+                "match": [
+                    "123456",
+                    "0123",
+                    "1",
+                    "0",
+                    "-1234",
+                ],
+                "no_match": [
+                    "0.0",
+                    "hello",
+                    "123hello",
+                ]
+            },
+            "Match: YYYY-MM-DDThh:mm:ss.*": {
+                "match": [
+                    "2018-01-01T00:00:00.hello",
+                    "1990-12-31T12:34:56",
+                ],
+                "no_match": [
+                    "1st July 2018",
+                    "blah",
+                    "abcd-ef-ghT00:00:00",
+                ]
+            },
+            "Valid email": {
+                "match": [
+                    "hello@there.com",
+                    "hello123.456.there@everyone.com",
+                    "a.b.c@d.e.f.ac.uk",
+                ],
+                "no_match": [
+                    "hello at there.com",
+                    "hello @ there.com",
+                ]
+            },
+            "Match: vN.M": {
+                "match": [
+                    "v0.0",
+                    "v1.2",
+                    "v3.0",
+                ],
+                "no_match": [
+                    "v1-2",
+                    "v4",
+                    "1.3",
+                    "v12.3",
+                    "v1.23",
+                ]
+            },
+        }
+
+        for spreadsheet_value, strings in test_data.items():
+            regex = GlobalAttrCheck.spreadsheet_value_to_regex(spreadsheet_value)
+            for string in strings["match"]:
+                assert re.match(regex, string)
+            for string in strings["no_match"]:
+                assert not re.match(regex, string)
