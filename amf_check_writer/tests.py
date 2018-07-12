@@ -896,6 +896,22 @@ class TestGlobalAttributeRegexes(BaseTest):
                     "ftp://data.somewhere.org",
                 ]
             },
+            "Exact match: <number> m": {
+                "match": [
+                    "0 m",
+                    "100 m",
+                    "0.12345 m",
+                    "-12 m",
+                    "-12.999 m",
+                ],
+                "no_match": [
+                    "2m",
+                    "2ms",
+                    "s2 m",
+                    "two meters",
+                    "2. m"
+                ]
+            },
         }
 
         def to_full_match(regex_str):
