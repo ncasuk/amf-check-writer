@@ -12,21 +12,14 @@ from oauth2client.file import Storage
 
 this_dir = os.path.dirname(__file__)
 CLIENT_SECRETS_DIR = os.path.join(this_dir, os.pardir, "client_secrets")
+CLIENT_SECRET_FILE = os.path.join(CLIENT_SECRETS_DIR, "client_secret.json")
+APP_NAME = "amf-check-writer"
 
-
-config = {
-    "sheets": {
-        # If modifying these scopes, delete your previously saved credentials
-        # at ~/.credentials/sheets.googleapis.com-python-quickstart.json
-        "scopes": "https://www.googleapis.com/auth/spreadsheets.readonly",
-        "client_secret_file": os.path.join(CLIENT_SECRETS_DIR, "sheets.json"),
-        "app_name": "Google Sheets API Python Quickstart"
-    },
-    "drive": {
-        "scopes": "https://www.googleapis.com/auth/drive.metadata.readonly",
-        "client_secret_file": os.path.join(CLIENT_SECRETS_DIR, "drive.json"),
-        "app_name": "Google Drive API Python Quickstart"
-    }
+SCOPES = {
+    # If modifying these scopes, delete your previously saved credentials
+    # at ~/.credentials/sheets.googleapis.com-python-quickstart.json
+    "sheets": "https://www.googleapis.com/auth/spreadsheets.readonly",
+    "drive":  "https://www.googleapis.com/auth/drive.metadata.readonly"
 }
 
 
@@ -39,12 +32,9 @@ def get_credentials(api):
     Returns:
         Credentials, the obtained credential.
     """
-    info = config[api]
-
-    client_secret_file = info["client_secret_file"]
-    if not os.path.isfile(client_secret_file):
+    if not os.path.isfile(CLIENT_SECRET_FILE):
         raise IOError("Client secret file not found at '{}'. See instructions "
-                      "in README.md".format(client_secret_file))
+                      "in README.md".format(CLIENT_SECRET_FILE))
 
     home_dir = os.path.expanduser('~')
     credential_dir = os.path.join(home_dir, '.credentials')
@@ -56,8 +46,8 @@ def get_credentials(api):
     store = Storage(credential_path)
     credentials = store.get()
     if not credentials or credentials.invalid:
-        flow = client.flow_from_clientsecrets(client_secret_file, info["scopes"])
-        flow.user_agent = info["app_name"]
+        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES[api])
+        flow.user_agent = APP_NAME
         flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
         credentials = tools.run_flow(flow, store, flags)
         print('Storing credentials to ' + credential_path)

@@ -170,9 +170,16 @@ def main():
         "output_dir",
         help="Directory to write spreadsheets to"
     )
-    args = parser.parse_args(sys.argv[1:])
+    # NOTE: here we only parse first argument, so this will need updating if
+    # more arguments are needed. This is to get out of the way of Google's
+    # argparser which is automatically used when imported
+    arg_list = []
+    try:
+        arg_list.append(sys.argv.pop(1))
+    except IndexError:
+        pass
+    args = parser.parse_args(arg_list)
 
-    # pop from argv to not get in the way of Google's argparser
     downloader = SheetDownloader(args.output_dir)
     downloader.run()
 
