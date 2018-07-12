@@ -146,7 +146,7 @@ CVs are created for:
 * Variable/dimension names and attributes common to all data products
   (`AMF_product_common_{variable,dimension}_{air,land,sea}.json`)
 
-The format of each CV is specific to each type.
+The format of the CVs is specific to each type.
 
 Each CV is also saved with [pyessv](https://github.com/ES-DOC/pyessv) and
 written to pyessv's archive directory. The directory can be overridden with the
@@ -156,7 +156,7 @@ written to pyessv's archive directory. The directory can be overridden with the
 
 Usage: `create-yaml-checks <spreadsheets dir> <output dir>`.
 
-This script reads .tsv files and produced YAML checks to be used with
+This script reads .tsv files and produces YAML checks to be used with
 [cc-yaml](https://github.com/joesingo/cc-yaml) and
 [compliance-check-lib](https://github.com/cedadev/compliance-check-lib).
 
@@ -168,8 +168,24 @@ Checks are created for:
 * File info (name, size etc...) and file structure
 
 For each data product/deployment mode combination, a check
-`AMF_product_<name>_<mode>.yml` is created that includes the relevant
-product and common variable/dimension checks, and all global checks.
+`AMF_product_<name>_<mode>.yml` is created that includes global checks and the relevant
+variable/dimensions checks for the product and mode. e.g.:
+
+`AMF_product_soil_land.yml`:
+```yaml
+suite_name: product_soil_land_checks
+checks:
+# Global checks
+- {__INCLUDE__: AMF_file_info.yml}
+- {__INCLUDE__: AMF_file_structure.yml}
+- {__INCLUDE__: AMF_global_attrs.yml}
+# Common checks for 'land' deployment mode
+- {__INCLUDE__: AMF_product_common_dimension_land.yml}
+- {__INCLUDE__: AMF_product_common_variable_land.yml}
+# Product specific
+- {__INCLUDE__: AMF_product_soil_dimension.yml}
+- {__INCLUDE__: AMF_product_soil_variable.yml}
+```
 
 ## Testing
 
