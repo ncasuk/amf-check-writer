@@ -1,98 +1,73 @@
 # amf-check-writer
 
-(This README is out of date whilst work is in progress)
-
 **TODO:**
 
-* Update installation instructions (get `cc-yaml`, no need to `pyessv-writer-amf` etc)
-* Provide more helpful instructions for getting Google API credentials
-* Document file naming scheme for CV and JSON files
-
 provisional installation instructions:
-* install JAP
-* yum install python27-netCDF4 python27-iris python27-cf python27-virtualenv
-              python27-cf_units
 
 ---
 
-This repo contains scripts to generate python checks suites for `compliance-checker`
-based on specifications for AMF data in spreadsheets in Google Drive.
+This repo contains scripts to:
 
-The `compliance-checker` plugin resulting from this work can be obtained
-here: https://github.com/joesingo/cc-plugin-amf. Note that you still need to
-install the JSON controlled vocabulary files with `pyessv`, so most of the steps
-listed below are still required.
+* Download spreadsheets containing specifications for AMF data products from a
+  folder in Google Drive
 
-## Setup ##
+* Generate check suites for the [IOOS compliance
+  checker](https://github.com/ioos/compliance-checker) based on the contents of
+  the spreadsheets
+
+* Generate controlled vocabulary files from the spreadsheets
+
+The checks are generated in YAML format for use with the
+[cc-yaml](https://github.com/joesingo/cc-yaml) plugin for compliance-checker.
+The code for the checks themselves is implemented in
+[compliance-check-lib](https://github.com/cedadev/compliance-check-lib).
+
+## Quickstart
+
+(**TODO:** come up with correct and up-to-date instructions for installing
+dependencies. Possibly use: install JAP, and then `yum install python27-netCDF4
+python27-iris python27-cf python27-virtualenv python27-cf_units`)
 
 ```bash
 # Create an activate a python 2.7 virtual environment
 virtualenv -p python2.7 venv
 source venv/bin/activate
 
-# Get various repos
-git clone https://github.com/ncasuk/amf_check_writer
-git clone https://github.com/cedadev/compliance-check-maker
-git clone -b amf-cc-yaml https://github.com/joesingo/compliance-check-lib  # Note: clone 'amf-cc-yaml' branch
-git clone https://github.com/joesingo/pyessv-writer-amf
+# Install dependencies
+...
 
-# Install requirements
-pip install -e ./amf_check_writer
-pip install -r pyessv-writer-amf/requirements.txt
-pip install -e ./compliance-check-lib
-pip install -e ./compliance-check-maker
-pip install compliance-checker
+# Download spreadsheets. See 'authentication' section below for first time usage
+download-from-drive /tmp/spreadsheets
 
-# Run scripts - see sections below for details on each
-cd amf-check-writer/amf_check_writer
-download_from_drive /tmp/spreadsheets
-mkdir /tmp/cvs
-create_cvs /tmp/spreadsheets /tmp/cvs
+# Create controlled vocabulary files from spreadsheets
+create-cvs /tmp/spreadsheets /tmp/cvs
 
-# Set up compliance-check-maker - SKIP THIS IF USING cc-plugin-amf and
-# continue at ***
-cd ../../compliance-check-maker
-# Clear out old YAMl checks, but keep PROJECT_METADATA.yml
-mv project/amf/PROJECT_METADATA.yml /tmp
-rm project/amf/*.yml
-mv /tmp/PROJECT_METADATA.yml project/amf
+# Create YAML checks from spreadsheets
+create-yaml-checks /tmp/spreadsheets /tmp/yaml
 
-cd ../amf-check-writer/amf_check_writer
-create_yaml_checks /tmp/cvs ../../compliance-check-maker/project/amf
-
-cd ../../compliance-check-maker
-python write_checkers.py amf
-
-# Python checks are now available at ouput/amf/py/AMF_*.py to make them
-# available to compliance-checker they need to installed as part of a plugin -
-# take cc-plugin-amf as an example and update the files in there. See the
-# README.md in that repo to avoid writing list of checks out by hand...
-
-# ***
-# Now cache JSON CVs generated earlier so they can be used by compliance-check-lib
-cd ../pyessv-writer-amf/sh
-mkdir -p ~/.esdoc/pyessv-archive
-python write_amf_cvs.py --source /tmp/cvs
-
-# If everything worked okay - run a check! e.g.
-cchecker.py --test amf-o2n2_concentration_ratio_variable /path/to/netcdf/file.nc
+# Run a check; e.g:
+compliance-checker --yaml /tmp/yaml/AMF_product_radiation_land.yml \
+                   --test product_radiation_land_checks \
+                   /path/to/dataset.nc
 ```
 
-## Scripts ##
+See below for more details on the scripts called above.
 
-### download_from_drive ###
+## Scripts
 
-Usage: `download_from_drive <output directory>`.
+### download-from-drive
+
+Usage: `download-from-drive <output dir>`.
 
 This script recursively finds all spreadsheets under a folder in Google Drive
-and save sheets from each as a .tsv file (the root folder ID is hardcoded in
-`amf_check_writer/download_from_drive.py`).
+and saves each worksheet as a .tsv file (the root folder ID is hardcoded in
+`amf_check_writer/download-from-drive.py`).
 
 The directory structure of the Drive folder is preserved, and a directory for
 each spreadsheet is created. The individual sheets are saved as
 `<sheet name>.tsv` inside the spreadsheet directory.
 
-For example, after running `download_from_drive /tmp/mysheets` with
+For example, after running `download-from-drive /tmp/mysheets` with
 a test folder:
 
 ```
@@ -111,62 +86,95 @@ $ tree /tmp/mysheets
 5 directories, 4 files
 ```
 
-#### Authentication ####
+#### Authentication
 
-Follow the instructions on the Google site to get credentials for the Sheets
-and Drive APIs:
+Downloding spreadsheets from Google Drive requires the script to authenticate
+as your Google account. This is done using a JSON file obtained from the
+Google API dashboard.
+
+* Visit https://console.developers.google.com/apis/dashboard
+
+* Select a project from the dropdown in the heaader bar, or create a new
+  project (blue button named 'Create project')
+
+* Click the 'Enable APIs and Services' button in the header bar
+
+* Search for 'Google Drive API'. Click the result and press 'Enable'. Return to
+  the dashboard and do the same for 'Google Sheets API'
+
+* Return to the dashboard and click 'Credentials' in the sidebar on the left
+  (key icon)
+
+* Click 'Create credentials' and select 'OAuth client ID'. Select 'Other' for
+  application type and follow the prompts. Dismiss the popup that appears.
+
+* You should see the newly created credentials in the table. On the right hand
+  side of the table there is a download icon ('Download JSON'). Click it and
+  save the JSON file to `client_secrets/client_secret.json` in this repo.
+
+* When running `download-from-drive` for the first time a web browser will be
+  opened for you to verify access to your Google account. To avoid this run the
+  script as `download-from-drive <out dir> --noauth_local_webserver` - you will
+  then need to visit a webpage and enter a verification code. Note that the
+  order of arguments is important here.
+
+Alternatively follow the quickstart guide on the Google sheets site to enable
+the sheets API and create credentials (this also allows you to create a new
+project):
 
 https://developers.google.com/sheets/api/quickstart/python
 
-https://developers.google.com/drive/v3/web/quickstart/python
+After this visit the API dashboard to enable the Drive API, as detailed above.
+You do not need to create another credentials JSON file.
 
-Put the downloaded `client_secret.json` files at `client_secrets/sheets.json`
-and `client_secrets/drive.json`.
+### create-cvs
 
-When running the script for the first time a web browser will be opened for you
-to verify access to your Google account. To avoid this run the script as
-`python downloaded <out dir> --noauth_local_webserver` - you will then need to
-visit a webpage and enter a verification code (the order of arguments is
-important here).
+Usage: `create-cvs [--pyessv-dir <pyessv root>] <spreadsheets dir> <output dir>`.
 
-### create_cvs ###
+This script reads .tsv files downloaded with `download-from-drive`, and
+generates controlled vocabularies in JSON format from various worksheets. Each
+file is saved in `<output dir>` as `AMF_<name>.json`.
 
-Usage: `create_cvs <input dir> <output dir>`.
+CVs are created for:
 
-This scripts takes a directory containing .tsv files downloaded with
-`download_from_drive`, finds those that describe specifications for
-attributes in variables/dimensions, and converts them to a JSON format.
+* List of instruments and their names and descriptions
+* List of platforms
+* List of data products
+* List of creators (`AMF_scientist.json`)
+* Variable names and expected attributes (and values) for each data product
+* Dimension names and expected attributes (and values) for each data product
+* Variable/dimension names and attributes common to all data products
+  (`AMF_product_common_{variable,dimension}_{air,land,sea}.json`)
 
-JSON files are saved in `<output_dir>` as `AMF_<product name>_<type>_(variable|dimension).json`,
-but `<type>` is omitted if not present. Examples include `AMF_common_air_variable.json`,
-`AMF_common_sea_variable.json`, `AMF_sonde_variable.json` (`sonde` is product name, type is
-not present).
+The format of each CV is specific to each type.
 
-The format is as follows:
+Each CV is also saved with [pyessv](https://github.com/ES-DOC/pyessv) and
+written to pyessv's archive directory. The directory can be overridden with the
+`--pyessv-dir` option.
 
-```json
-{
-    "<product name>_<type>_(variable|dimension)": {
-        "<variable/dimension name>": {
-            "<attr>": "<value>",
-            ...
-        },
-        ...
-    }
-}
+### create-yaml-checks
+
+Usage: `create-yaml-checks <spreadsheets dir> <output dir>`.
+
+This script reads .tsv files and produced YAML checks to be used with
+[cc-yaml](https://github.com/joesingo/cc-yaml) and
+[compliance-check-lib](https://github.com/cedadev/compliance-check-lib).
+
+Similar to `create-cvs`, checks are saved in `<output dir>` as `AMF_name.yml`.
+Checks are created for:
+
+* Variable/dimension specifications (common and per-product)
+* Global attribute checks
+* File info (name, size etc...) and file structure
+
+For each data product/deployment mode combination, a check
+`AMF_product_<name>_<mode>.yml` is created that includes the relevant
+product and common variable/dimension checks, and all global checks.
+
+## Testing
+
+There are tests -- run using:
+
 ```
-
-All values are strings except for variables when the attribute is `valid_min`
-or `valid_max`; in this case it is a float.
-
-### create_yaml_checks ###
-
-Usage: `create_yaml_checks <input dir> <output dir>`.
-
-This script reads JSON controlled vocabulary files generated by `create_cvs`
-and writes YAML files that can be used to generate compliance checker suites with
-`compliance-check-maker`.
-
-It is important that the file names in `<input dir>` match the format of those produced by
-`create_cvs`. The files generated in `<output_dir>` are named the same as
-the input files but with extension `.yml` instead of `.json`.
+pytest amf_check_writer/tests.py
+```
