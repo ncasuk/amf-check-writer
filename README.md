@@ -1,11 +1,5 @@
 # amf-check-writer
 
-**TODO:**
-
-provisional installation instructions:
-
----
-
 This repo contains scripts to:
 
 * Download spreadsheets containing specifications for AMF data products from a
@@ -22,24 +16,51 @@ The checks are generated in YAML format for use with the
 The code for the checks themselves is implemented in
 [compliance-check-lib](https://github.com/cedadev/compliance-check-lib).
 
-## Quickstart
+## Installation
 
-(**TODO:** come up with correct and up-to-date instructions for installing
-dependencies. Possibly use: install JAP, and then `yum install python27-netCDF4
-python27-iris python27-cf python27-virtualenv python27-cf_units`)
+Depencendies for Compliance Checker and compliance-check-lib include some
+packages that must be compiled from source, which can be tricky to set up. The
+recommended way to get set up is to use a CentOS 6 machine and do the
+following:
+
+* Install the [JASMIN Analysis
+  Platform](https://github.com/cedadev/jasmin_scivm/wiki/Installation#64-bit-centos-6x)
+
+* `yum install` the following packages: `yum install python27-netCDF4
+  python27-iris python27-cf python27-virtualenv python27-cf_units`
+
+(alternatively use a JASMIN VM which will already have the JAP and those
+packages installed)
+
+Then create a Python 2.7 virtual environment and install the required python
+packages:
 
 ```bash
-# Create an activate a python 2.7 virtual environment
-virtualenv -p python2.7 venv
+virtalenv -p python2.7 --system-site-packages venv
 source venv/bin/activate
 
-# Install dependencies
-...
+pip install git+https://github.com/joesingo/compliance-checker@generator-plugins
+pip install git+https://github.com/joesingo/compliance-check-lib
+pip install git+https://github.com/joesingo/cc-yaml
 
+git clone https://github.com/ncasuk/amf-check-writer
+pip -e install ./amf-check-writer
+```
+
+Note that you should clone this repository and pip install with `-e`, instead
+of installing directly using the GitHub URL. This is because authenticating
+with Google's APIs looks for a JSON file in a location relative to the python
+scripts. See [authentication](#authentication) for details.
+
+## Quickstart
+
+```bash
 # Download spreadsheets. See 'authentication' section below for first time usage
 download-from-drive /tmp/spreadsheets
 
-# Create controlled vocabulary files from spreadsheets
+# Create controlled vocabulary files from spreadsheets. For first time usage
+# you may need to create the pyessv archive directory:
+# mkdir -p ~/.esdoc/pyessv-archive
 create-cvs /tmp/spreadsheets /tmp/cvs
 
 # Create YAML checks from spreadsheets
@@ -48,7 +69,10 @@ create-yaml-checks /tmp/spreadsheets /tmp/yaml
 # Run a check; e.g:
 compliance-checker --yaml /tmp/yaml/AMF_product_radiation_land.yml \
                    --test product_radiation_land_checks \
-                   /path/to/dataset.nc
+                   <dataset>
+
+# or using amf-checker wrapper script:
+amf-checker <dataset>
 ```
 
 See below for more details on the scripts called above.
@@ -113,10 +137,11 @@ Google API dashboard.
   save the JSON file to `client_secrets/client_secret.json` in this repo.
 
 * When running `download-from-drive` for the first time a web browser will be
-  opened for you to verify access to your Google account. To avoid this run the
-  script as `download-from-drive <out dir> --noauth_local_webserver` - you will
-  then need to visit a webpage and enter a verification code. Note that the
-  order of arguments is important here.
+  opened for you to verify access to your Google account. This will happen
+  twice; once for the Sheets API and once for Drive. To avoid opening a
+  graphical browser, run the script as `download-from-drive <out dir>
+  --noauth_local_webserver` - you will then need to visit a webpage and enter a
+  verification code. Note that the order of arguments is important here.
 
 Alternatively follow the quickstart guide on the Google sheets site to enable
 the sheets API and create credentials (this also allows you to create a new
@@ -150,7 +175,9 @@ The format of the CVs is specific to each type.
 
 Each CV is also saved with [pyessv](https://github.com/ES-DOC/pyessv) and
 written to pyessv's archive directory. The directory can be overridden with the
-`--pyessv-dir` option.
+`--pyessv-dir` option. Beware that if you use a non-standard pyessv archive
+directory, you must set `PYESSV_ARCHIVE_HOME` environment variable accordingly
+when running `compliance-checker` or `amf-checker`.
 
 ### create-yaml-checks
 
