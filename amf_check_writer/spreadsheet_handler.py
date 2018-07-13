@@ -222,7 +222,7 @@ class SpreadsheetHandler(object):
                 if not match:
                     continue
 
-                prod_name = match.group("name").replace("-", "_")
+                prod_name = match.group("name")
                 cv_type = match.group("type")
                 cls = self.VAR_DIM_FILENAME_MAPPING[cv_type]["cls"]
                 facets = ["product", prod_name,

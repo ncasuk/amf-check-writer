@@ -44,11 +44,11 @@ class TestVariablesAndDimensionsGeneration(BaseTest):
         sh = SpreadsheetHandler(str(s_dir))
         sh.write_cvs(str(output))
 
-        cv_file = output.join("AMF_product_wind_speed_variable.json")
+        cv_file = output.join("AMF_product_wind-speed_variable.json")
         assert cv_file.check()
         obj = json.load(cv_file)
-        assert "product_wind_speed_variable" in obj
-        return obj["product_wind_speed_variable"]
+        assert "product_wind-speed_variable" in obj
+        return obj["product_wind-speed_variable"]
 
     def test_basic(self, spreadsheets_dir, tmpdir):
         # variables
@@ -82,8 +82,8 @@ class TestVariablesAndDimensionsGeneration(BaseTest):
         sh = SpreadsheetHandler(str(s_dir))
         sh.write_cvs(str(output))
 
-        var_cv = output.join("AMF_product_my_great_product_variable.json")
-        dim_cv = output.join("AMF_product_other_cool_product_dimension.json")
+        var_cv = output.join("AMF_product_my-great-product_variable.json")
+        dim_cv = output.join("AMF_product_other-cool-product_dimension.json")
         assert var_cv.check()
         assert dim_cv.check()
 
@@ -96,7 +96,7 @@ class TestVariablesAndDimensionsGeneration(BaseTest):
 
         # check variables - variable CV
         assert decoded[0] == {
-            "product_my_great_product_variable": {
+            "product_my-great-product_variable": {
                 "wind_speed": {
                     "name": "wind_speed",
                     "type": "float32"
@@ -109,7 +109,7 @@ class TestVariablesAndDimensionsGeneration(BaseTest):
         }
         # check dimensions CV
         assert decoded[1] == {
-            "product_other_cool_product_dimension": {
+            "product_other-cool-product_dimension": {
                 "layer_index": {
                     "length": "<i>",
                     "units": "1"
@@ -226,8 +226,8 @@ class TestYamlGeneration(BaseTest):
         sh = SpreadsheetHandler(str(s_dir))
         sh.write_yaml(str(output))
 
-        var_output_yml = output.join("AMF_product_my_great_product_variable.yml")
-        dim_output_yml = output.join("AMF_product_my_great_product_dimension.yml")
+        var_output_yml = output.join("AMF_product_my-great-product_variable.yml")
+        dim_output_yml = output.join("AMF_product_my-great-product_dimension.yml")
         assert var_output_yml.check()
         assert dim_output_yml.check()
 
@@ -239,14 +239,14 @@ class TestYamlGeneration(BaseTest):
                 assert False, "{} is invalid YAML".format(str(f))
 
         assert decoded[0] == {
-            "suite_name": "product_my_great_product_variable_checks",
+            "suite_name": "product_my-great-product_variable_checks",
             "checks": [
                 {
                     "check_id": "check_wind_speed_variable_attrs",
                     "check_name": "checklib.register.nc_file_checks_register.NCVariableMetadataCheck",
                     "comments": "Checks the variable attributes for 'wind_speed'",
                     "parameters": {
-                        "pyessv_namespace": "product_my_great_product_variable",
+                        "pyessv_namespace": "product_my-great-product_variable",
                         "var_id": "wind_speed",
                         "vocabulary_ref": "ncas:amf"
                     }
@@ -266,7 +266,7 @@ class TestYamlGeneration(BaseTest):
                     "check_name": "checklib.register.nc_file_checks_register.NCVariableMetadataCheck",
                     "comments": "Checks the variable attributes for 'eastward_wind'",
                     "parameters": {
-                        "pyessv_namespace": "product_my_great_product_variable",
+                        "pyessv_namespace": "product_my-great-product_variable",
                         "var_id": "eastward_wind",
                         "vocabulary_ref": "ncas:amf"
                     }
@@ -285,14 +285,14 @@ class TestYamlGeneration(BaseTest):
         }
 
         assert decoded[1] == {
-            "suite_name": "product_my_great_product_dimension_checks",
+            "suite_name": "product_my-great-product_dimension_checks",
             "checks": [
                 {
                     "check_id": "check_one_dimension_attrs",
                     "check_name": "checklib.register.nc_file_checks_register.NetCDFDimensionCheck",
                     "comments": "Checks the dimension attributes for 'one'",
                     "parameters": {
-                        "pyessv_namespace": "product_my_great_product_dimension",
+                        "pyessv_namespace": "product_my-great-product_dimension",
                         "dim_id": "one",
                         "vocabulary_ref": "ncas:amf"
                     }
@@ -302,7 +302,7 @@ class TestYamlGeneration(BaseTest):
                     "check_name": "checklib.register.nc_file_checks_register.NetCDFDimensionCheck",
                     "comments": "Checks the dimension attributes for 'two'",
                     "parameters": {
-                        "pyessv_namespace": "product_my_great_product_dimension",
+                        "pyessv_namespace": "product_my-great-product_dimension",
                         "dim_id": "two",
                         "vocabulary_ref": "ncas:amf"
                     }
