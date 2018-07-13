@@ -187,6 +187,22 @@ checks:
 - {__INCLUDE__: AMF_product_soil_variable.yml}
 ```
 
+### amf-checker
+
+Usage: `amf-checker [--yaml-dir <yaml dir>] [-o <output dir>] [-f <output format>] <dataset>...`
+
+Wrapper script around compliance-checker to automatically find and run the
+relevant YAML checks for AMF datasets. See `--help` output for detailed help on
+the meaning of the available options.
+
+`<dataset>` can be either the path to a NetCDF file or a directory, in which
+case all files in the directory are checked. Multiple files/directories can be
+given, so shell globs can be used: e.g.
+
+```bash
+amf-checker /path/to/data/*.nc
+```
+
 ## Testing
 
 There are tests -- run using:

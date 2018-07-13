@@ -15,6 +15,7 @@ from amf_check_writer.spreadsheet_handler import SpreadsheetHandler
 from amf_check_writer.exceptions import CVParseError
 from amf_check_writer.cvs import VariablesCV
 from amf_check_writer.yaml_check import GlobalAttrCheck
+from amf_check_writer.amf_checker import get_product_from_filename
 
 
 class BaseTest(object):
@@ -949,3 +950,27 @@ class TestGlobalAttributeRegexes(BaseTest):
             assert re.match(regex, value)
             for string in strings["no_match"]:
                 assert not re.match(regex, string)
+
+
+class TestCheckerWrapperScript(BaseTest):
+    def test_get_product_and_mode(self):
+        filenames = (
+            ("my-instrument_platform_20180101001122_coolproducthere_v1.2.nc",
+             "coolproducthere"),
+            ("instr_plat_20180101001122_myprod_op1_op2_v2.4.nc", "myprod"),
+            ("instr_plat_2018_myprod_v4.nc", "myprod"),
+        )
+        for fname, prod in filenames:
+            assert get_product_from_filename(fname) == prod
+
+        bad_filenames = (
+            "instrument name_platform_20180101001122_prod_v1.2.nc",
+            "instrument_platform_20180101001122_v1.2.nc",
+            "instrument_platform_201G0101001122_prod_v1.2.nc",
+            "instrument_platform_20180101001122_myprod_op1_op2_op3_v2.4.nc",
+            "instrument_platform_extra_20180101001122_myprod_op1_op2_v2.4.nc",
+        )
+
+        for fname in bad_filenames:
+            with pytest.raises(ValueError):
+                get_product_from_filename(fname)

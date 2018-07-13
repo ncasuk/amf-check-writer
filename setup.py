@@ -14,6 +14,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
+            "amf-checker=amf_check_writer.amf_checker:main",
             "create-cvs=amf_check_writer.create_cvs:main",
             "create-yaml-checks=amf_check_writer.create_yaml_checks:main",
             "download-from-drive=amf_check_writer.download_from_drive:main",
