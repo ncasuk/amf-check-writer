@@ -26,8 +26,8 @@ following:
 * Install the [JASMIN Analysis
   Platform](https://github.com/cedadev/jasmin_scivm/wiki/Installation#64-bit-centos-6x)
 
-* `yum install` the following packages: `yum install python27-netCDF4
-  python27-iris python27-cf python27-virtualenv python27-cf_units`
+* Install the following packages: `yum install python27-netCDF4 python27-iris
+  python27-cf python27-virtualenv python27-cf_units`
 
 (alternatively use a JASMIN VM which will already have the JAP and those
 packages installed)
@@ -74,8 +74,6 @@ compliance-checker --yaml /tmp/yaml/AMF_product_radiation_land.yml \
 # or using amf-checker wrapper script:
 amf-checker <dataset>
 ```
-
-See below for more details on the scripts called above.
 
 ## Scripts
 
