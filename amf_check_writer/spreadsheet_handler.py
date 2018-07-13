@@ -27,7 +27,7 @@ class DeploymentModes(Enum):
 SPREADSHEET_NAMES = {
     "products_dir": "Product Definition Spreadsheets",
     "common_spreadsheet": "Common.xlsx",
-    "vocabs_spreadsheet": "Vocabularies",
+    "vocabs_spreadsheet": "Vocabularies.xlsx",
     "global_attrs_worksheet": "Global Attributes.tsv",
     "instruments_worksheet": "Instrument Name & Descriptors.tsv",
     "data_products_worksheet": "Data Products.tsv",

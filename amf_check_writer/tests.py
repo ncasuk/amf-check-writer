@@ -23,7 +23,7 @@ class BaseTest(object):
         s = tmpdir.mkdir("spreadsheets")
         s.mkdir("Common.xlsx")
         s.mkdir("Product Definition Spreadsheets")
-        vars_sheet = s.mkdir("Vocabularies")
+        vars_sheet = s.mkdir("Vocabularies.xlsx")
         return s
 
 
@@ -541,7 +541,7 @@ class TestVocabulariesSheet(BaseTest):
     """
     def test_instruments(self, spreadsheets_dir, tmpdir):
         s_dir = spreadsheets_dir
-        instr = s_dir.join("Vocabularies").join("Instrument Name & Descriptors.tsv")
+        instr = s_dir.join("Vocabularies.xlsx").join("Instrument Name & Descriptors.tsv")
         instr.write("\n".join((
             # Include some missing old names, some multiple names, and
             # extraneous whitespace
@@ -588,7 +588,7 @@ class TestVocabulariesSheet(BaseTest):
         printed and one of them is overwritten
         """
         s_dir = spreadsheets_dir
-        instr = s_dir.join("Vocabularies").join("Instrument Name & Descriptors.tsv")
+        instr = s_dir.join("Vocabularies.xlsx").join("Instrument Name & Descriptors.tsv")
         instr.write("\n".join((
             "Old Instrument Name\tNew Instrument Name\tDescriptor",
             "old1\tmyinstr\tFirst instrument",
@@ -631,7 +631,7 @@ class TestVocabulariesSheet(BaseTest):
 
     def test_product(self, spreadsheets_dir, tmpdir):
         s_dir = spreadsheets_dir
-        prod = s_dir.join("Vocabularies").join("Data Products.tsv")
+        prod = s_dir.join("Vocabularies.xlsx").join("Data Products.tsv")
         prod.write("\n".join((
             "Data Product",
             "snr-winds",
@@ -658,7 +658,7 @@ class TestVocabulariesSheet(BaseTest):
 
     def test_platform(self, spreadsheets_dir, tmpdir):
         s_dir = spreadsheets_dir
-        plat = s_dir.join("Vocabularies").join("Platforms.tsv")
+        plat = s_dir.join("Vocabularies.xlsx").join("Platforms.tsv")
         plat.write("\n".join((
             "Platform ID\tPlatform Description",
             "wao\tweybourne atmospheric observatory",
@@ -685,7 +685,7 @@ class TestVocabulariesSheet(BaseTest):
 
     def test_scientist(self, spreadsheets_dir, tmpdir):
         s_dir = spreadsheets_dir
-        plat = s_dir.join("Vocabularies").join("Creators.tsv")
+        plat = s_dir.join("Vocabularies.xlsx").join("Creators.tsv")
         plat.write("\n".join((
             "name\temail\torcid\tconfirmed",
             # With 'confirmed' column
@@ -753,7 +753,7 @@ class TestPyessvGeneration(BaseTest):
         s_dir = spreadsheets_dir
 
         # Create scientists CV, to test that @ are allowed in namespaces
-        sci_tsv = s_dir.join("Vocabularies").join("Creators.tsv")
+        sci_tsv = s_dir.join("Vocabularies.xlsx").join("Creators.tsv")
         sci_tsv.write("\n".join((
             "name\temail\torcid\tconfirmed",
             "Bob Smith\tbob@smith.com\thttps://orcid.org/123\tyes",
@@ -761,7 +761,7 @@ class TestPyessvGeneration(BaseTest):
         )))
 
         # Create products CV, since this is a list rather dict like other CVs
-        prod_tsv = s_dir.join("Vocabularies").join("Data Products.tsv")
+        prod_tsv = s_dir.join("Vocabularies.xlsx").join("Data Products.tsv")
         prod_tsv.write("\n".join((
             "Data Product",
             "snr-winds",
