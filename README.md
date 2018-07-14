@@ -79,7 +79,7 @@ amf-checker <dataset>
 
 ### download-from-drive
 
-Usage: `download-from-drive <output dir>`.
+Usage: `download-from-drive [--secrets <secrets JSON>] <output dir>`.
 
 This script recursively finds all spreadsheets under a folder in Google Drive
 and saves each worksheet as a .tsv file (the root folder ID is hardcoded in
@@ -132,14 +132,15 @@ Google API dashboard.
 
 * You should see the newly created credentials in the table. On the right hand
   side of the table there is a download icon ('Download JSON'). Click it and
-  save the JSON file to `client_secrets/client_secret.json` in this repo.
+  save the JSON file.
 
-* When running `download-from-drive` for the first time a web browser will be
-  opened for you to verify access to your Google account. This will happen
-  twice; once for the Sheets API and once for Drive. To avoid opening a
-  graphical browser, run the script as `download-from-drive <out dir>
-  --noauth_local_webserver` - you will then need to visit a webpage and enter a
-  verification code. Note that the order of arguments is important here.
+* Run `download-from-drive` and use the `--secrets` option to point to the JSON
+  file just downloaded. Credentials are cached in `~/.credentials` after
+  initial authentication, so `--secrets` is only required the first time.
+
+* You will be given a URL to visit in a web browser and prompted for a
+  verification code. This lets you sign into a Google account and give
+  permission for the app to access your data on Google drive/sheets.
 
 Alternatively follow the quickstart guide on the Google sheets site to enable
 the sheets API and create credentials (this also allows you to create a new

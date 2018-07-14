@@ -10,9 +10,6 @@ from oauth2client import client, tools
 from oauth2client.file import Storage
 
 
-this_dir = os.path.dirname(__file__)
-CLIENT_SECRETS_DIR = os.path.join(this_dir, os.pardir, "client_secrets")
-CLIENT_SECRET_FILE = os.path.join(CLIENT_SECRETS_DIR, "client_secret.json")
 APP_NAME = "amf-check-writer"
 
 SCOPES = {
@@ -23,7 +20,7 @@ SCOPES = {
 }
 
 
-def get_credentials(api):
+def get_credentials(api, secrets_file=None):
     """Gets valid user credentials from storage.
 
     If nothing has been stored, or if the stored credentials are invalid,
@@ -32,10 +29,6 @@ def get_credentials(api):
     Returns:
         Credentials, the obtained credential.
     """
-    if not os.path.isfile(CLIENT_SECRET_FILE):
-        raise IOError("Client secret file not found at '{}'. See instructions "
-                      "in README.md".format(CLIENT_SECRET_FILE))
-
     home_dir = os.path.expanduser('~')
     credential_dir = os.path.join(home_dir, '.credentials')
     if not os.path.exists(credential_dir):
@@ -46,9 +39,17 @@ def get_credentials(api):
     store = Storage(credential_path)
     credentials = store.get()
     if not credentials or credentials.invalid:
-        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES[api])
+        if secrets_file is None:
+            raise ValueError(
+                "No valid credentials found in '{}' and secrets file not "
+                "given. Please re-run with --secrets".format(credential_dir)
+            )
+
+        flow = client.flow_from_clientsecrets(secrets_file, SCOPES[api])
         flow.user_agent = APP_NAME
-        flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
+        flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args([
+            "--noauth_local_webserver"
+        ])
         credentials = tools.run_flow(flow, store, flags)
         print('Storing credentials to ' + credential_path)
     return credentials

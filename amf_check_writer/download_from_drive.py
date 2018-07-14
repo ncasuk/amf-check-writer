@@ -67,15 +67,16 @@ class SheetDownloader(object):
     spreadsheets
     """
 
-    def __init__(self, out_dir):
+    def __init__(self, out_dir, secrets_file=None):
         self.out_dir = out_dir
+        self.secrets_file = secrets_file
 
         # Authenticate and get API handles
-        drive_credentials = get_credentials("drive")
+        drive_credentials = get_credentials("drive", secrets_file)
         drive_http = drive_credentials.authorize(httplib2.Http())
         self.drive_api = discovery.build("drive", "v3", http=drive_http)
 
-        sheets_credentials = get_credentials("sheets")
+        sheets_credentials = get_credentials("sheets", secrets_file)
         sheets_http = sheets_credentials.authorize(httplib2.Http())
         discovery_url = ("https://sheets.googleapis.com/$discovery/rest?version=v4")
         self.sheets_api = discovery.build("sheets", "v4", http=sheets_http,
@@ -170,17 +171,13 @@ def main():
         "output_dir",
         help="Directory to write spreadsheets to"
     )
-    # NOTE: here we only parse first argument, so this will need updating if
-    # more arguments are needed. This is to get out of the way of Google's
-    # argparser which is automatically used when imported
-    arg_list = []
-    try:
-        arg_list.append(sys.argv.pop(1))
-    except IndexError:
-        pass
-    args = parser.parse_args(arg_list)
-
-    downloader = SheetDownloader(args.output_dir)
+    parser.add_argument(
+        "-s", "--secrets",
+        help="Client secrets JSON file (see README for instructions on how to "
+             "obtain this). Only required for first time use."
+    )
+    args = parser.parse_args(sys.argv[1:])
+    downloader = SheetDownloader(args.output_dir, secrets_file=args.secrets)
     downloader.run()
 
 if __name__ == "__main__":
