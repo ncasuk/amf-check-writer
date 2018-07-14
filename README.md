@@ -39,18 +39,11 @@ packages:
 virtalenv -p python2.7 --system-site-packages venv
 source venv/bin/activate
 
-pip install git+https://github.com/joesingo/compliance-checker@generator-plugins
-pip install git+https://github.com/joesingo/compliance-check-lib
-pip install git+https://github.com/joesingo/cc-yaml
-
-git clone https://github.com/ncasuk/amf-check-writer
-pip -e install ./amf-check-writer
+pip install git+https://github.com/ncasuk/amf-check-writer \
+            git+https://github.com/joesingo/compliance-checker@generator-plugins \
+            git+https://github.com/joesingo/compliance-check-lib \
+            git+https://github.com/joesingo/cc-yaml
 ```
-
-Note that you should clone this repository and pip install with `-e`, instead
-of installing directly using the GitHub URL. This is because authenticating
-with Google's APIs looks for a JSON file in a location relative to the python
-scripts. See [authentication](#authentication) for details.
 
 ## Quickstart
 
