@@ -22,6 +22,7 @@ class YamlCheck(AmfFile):
         """
         return yaml.dump({
             "suite_name": "{}_checks".format(self.namespace),
+            "description": "Check '{}' in AMF files".format(" ".join(self.facets)),
             "checks": list(self.get_yaml_checks())
         })
 
