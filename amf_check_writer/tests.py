@@ -197,6 +197,23 @@ class TestVariablesAndDimensionsGeneration(BaseTest):
         ]) == {"wind_speed": {"name": "wind_speed", "type": "float32"}}
 
 
+    def test_list_value(self, spreadsheets_dir):
+        """
+        Check that values can be lists
+        """
+        assert self.get_var_inner_cv(spreadsheets_dir, [
+            ["Variable", "Attribute", "Value"],
+            ["wind_speed", "", ""],
+            ["", "name", " wind_speed"],
+            ["", "flag_meanings", "one |two|three   |four"]
+        ]) == {
+            "wind_speed": {
+                "name": "wind_speed",
+                "flag_meanings": ["one", "two", "three", "four"]
+            }
+        }
+
+
 class TestYamlGeneration(BaseTest):
     def test_basic(self, spreadsheets_dir, tmpdir):
         s_dir = spreadsheets_dir

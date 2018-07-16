@@ -50,5 +50,9 @@ class StripWhitespaceReader(DictReader):
                 key = key.strip()
             if isinstance(val, str):
                 val = val.strip()
+                # Try to split by '|' to get a list
+                split = val.split("|")
+                if len(split) > 1:
+                    val = map(str.strip, split)
             d[key] = val
         return d
