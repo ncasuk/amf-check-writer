@@ -241,6 +241,7 @@ class TestYamlGeneration(BaseTest):
 
         assert decoded[0] == {
             "suite_name": "product_my-great-product_variable_checks",
+            "description": "Check 'product my-great-product variable' in AMF files",
             "checks": [
                 {
                     "check_id": "check_wind_speed_variable_attrs",
@@ -287,6 +288,7 @@ class TestYamlGeneration(BaseTest):
 
         assert decoded[1] == {
             "suite_name": "product_my-great-product_dimension_checks",
+            "description": "Check 'product my-great-product dimension' in AMF files",
             "checks": [
                 {
                     "check_id": "check_one_dimension_attrs",
@@ -372,6 +374,7 @@ class TestYamlGeneration(BaseTest):
 
         assert yaml.load(top_level_air.read()) == {
             "suite_name": "product_soil_air_checks",
+            "description": "Check 'product soil air' in AMF files",
             "checks": [
                 # Global checks
                 {"__INCLUDE__": "AMF_file_info.yml"},
@@ -389,6 +392,7 @@ class TestYamlGeneration(BaseTest):
         # there is also common dimensions CV for land
         assert yaml.load(top_level_land.read()) == {
             "suite_name": "product_soil_land_checks",
+            "description": "Check 'product soil land' in AMF files",
             "checks": [
                 {"__INCLUDE__": "AMF_file_info.yml"},
                 {"__INCLUDE__": "AMF_file_structure.yml"},
@@ -409,6 +413,7 @@ class TestYamlGeneration(BaseTest):
         assert file_info_check.check()
         assert yaml.load(file_info_check.read()) == {
             "suite_name": "file_info_checks",
+            "description": "Check 'file_info' in AMF files",
             "checks": [
                 {
                     "check_id": "check_soft_file_size_limit",
@@ -440,6 +445,7 @@ class TestYamlGeneration(BaseTest):
         assert file_structure_check.check()
         assert yaml.load(file_structure_check.read()) == {
             "suite_name": "file_structure_checks",
+            "description": "Check 'file_structure' in AMF files",
             "checks": [{
                 "check_id": "check_valid_netcdf4_file",
                 "check_name": "checklib.register.nc_file_checks_register.NetCDFFormatCheck",
