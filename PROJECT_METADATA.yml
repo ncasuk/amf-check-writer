@@ -1,0 +1,8 @@
+# Project metadata
+canonicalName:    amf
+label:            AMF
+description:      Atmospheric Measurement Facility
+vocab_authority:  ncas
+vocab_scope:      amf
+url:              https://www.ncas.ac.uk/en/amf-menu
+checks_version:   0.2
