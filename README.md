@@ -12,7 +12,7 @@ This repo contains scripts to:
 * Generate controlled vocabulary files from the spreadsheets
 
 The checks are generated in YAML format for use with the
-[cc-yaml](https://github.com/joesingo/cc-yaml) plugin for compliance-checker.
+[cc-yaml](https://github.com/cedadev/cc-yaml) plugin for compliance-checker.
 The code for the checks themselves is implemented in
 [compliance-check-lib](https://github.com/cedadev/compliance-check-lib).
 
@@ -40,9 +40,9 @@ virtalenv -p python2.7 --system-site-packages venv
 source venv/bin/activate
 
 pip install git+https://github.com/ncasuk/amf-check-writer \
-            git+https://github.com/joesingo/compliance-checker@generator-plugins \
-            git+https://github.com/joesingo/compliance-check-lib \
-            git+https://github.com/joesingo/cc-yaml
+            git+https://github.com/cedadev/compliance-checker \
+            git+https://github.com/cedadev/compliance-check-lib \
+            git+https://github.com/cedadev/cc-yaml
 ```
 
 ## Quickstart
@@ -176,7 +176,7 @@ when running `compliance-checker` or `amf-checker`.
 Usage: `create-yaml-checks <spreadsheets dir> <output dir>`.
 
 This script reads .tsv files and produces YAML checks to be used with
-[cc-yaml](https://github.com/joesingo/cc-yaml) and
+[cc-yaml](https://github.com/cedadev/cc-yaml) and
 [compliance-check-lib](https://github.com/cedadev/compliance-check-lib).
 
 Similar to `create-cvs`, checks are saved in `<output dir>` as `AMF_name.yml`.
