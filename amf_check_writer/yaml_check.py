@@ -146,7 +146,7 @@ class GlobalAttrCheck(YamlCheck):
             "Valid email": r"[^@\s]+@[^@\s]+\.[^\s@]+",
             "Valid URL": r"https?://[^\s]+\.[^\s]*[^\s\.](/[^\s]+)?",
             "Match: vN.M": r"v\d\.\d",
-            "Match: YYYY-MM-DDThh:mm:ss.*": "\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.*",
+            "Match: YYYY-MM-DDThh:mm:ss\.\d+": "\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?",
             "Exact match: <number> m": r"-?\d+(\.\d+)? m",
         }
         # Regexes based on a regex in the rule column

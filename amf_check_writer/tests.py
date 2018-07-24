@@ -866,15 +866,17 @@ class TestGlobalAttributeRegexes(BaseTest):
                     "hello",
                 ]
             },
-            "Match: YYYY-MM-DDThh:mm:ss.*": {
+            "Match: YYYY-MM-DDThh:mm:ss\.\d+": {
                 "match": [
-                    "2018-01-01T00:00:00.hello",
+                    "2018-01-01T00:00:00.2345345",
                     "1990-12-31T12:34:56",
                 ],
                 "no_match": [
                     "1st July 2018",
                     "blah",
                     "abcd-ef-ghT00:00:00",
+                    "2018-01-01T00:00:00.",
+                    "2018-01-01T00:00:00.123abc",
                 ]
             },
             "Valid email": {
