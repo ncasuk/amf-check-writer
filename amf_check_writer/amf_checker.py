@@ -83,9 +83,7 @@ def main():
     # Options
     parser.add_argument(
         "--yaml-dir",
-        default="/tmp/yaml",
-        help="Directory containing YAML checks, as produced by "
-             "create-yaml-checks [default: %(default)s]"
+        help="Directory containing YAML checks for AMF"
     )
     parser.add_argument(
         "-o", "--output-dir",
@@ -102,6 +100,10 @@ def main():
              "files"
     )
     args = parser.parse_args(sys.argv[1:])
+
+    # Check yaml_dir exists
+    if not args.yaml_dir or not os.path.isdir(args.yaml_dir):
+        raise ValueError("Please include directory of YAML checks as argument: '--yaml-dir'.") 
 
     files = []
     for fname in args.files:

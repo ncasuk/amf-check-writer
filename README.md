@@ -109,7 +109,7 @@ Google API dashboard.
 
 * Visit https://console.developers.google.com/apis/dashboard
 
-* Select a project from the dropdown in the heaader bar, or create a new
+* Select a project from the dropdown in the header bar, or create a new
   project (blue button named 'Create project')
 
 * Click the 'Enable APIs and Services' button in the header bar

@@ -70,6 +70,6 @@ class VariablesCV(BaseCV, YamlCheck):
                                  .format(var_name))
                 }
             except KeyError as ex:
-                print("Warning: Missing value {} in '{}"
+                print("WARNING: Missing value {} in '{}"
                       .format(ex, self.tsv_file.name),
                       file=sys.stderr)

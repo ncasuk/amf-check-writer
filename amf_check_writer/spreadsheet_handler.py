@@ -212,7 +212,7 @@ class SpreadsheetHandler(object):
         CVs
         """
         sheet_regex = re.compile(
-            r"(?P<name>[a-zA-Z-]+)/(?P=name)\.xlsx/(?P<type>Variables|Dimensions) - Specific.tsv$"
+            r"(?P<name>[a-zA-Z0-9-]+)/(?P=name)\.xlsx/(?P<type>Variables|Dimensions) - Specific.tsv$"
         )
         prods_dir = os.path.join(self.path, SPREADSHEET_NAMES["products_dir"])
         for dirpath, _dirnames, filenames in os.walk(prods_dir):
@@ -220,6 +220,7 @@ class SpreadsheetHandler(object):
                 path = os.path.join(dirpath, fname)
                 match = sheet_regex.search(path)
                 if not match:
+                    print("WARNING: No match for '{}'".format(path))
                     continue
 
                 prod_name = match.group("name")
