@@ -17,6 +17,7 @@ from amf_check_writer.credentials import get_credentials
 
 # ID of the top level folder in Google Drive
 ROOT_FOLDER_ID = "1TGsJBltDttqs6nsbUwopX5BL_q8AU-5X"
+NROWS_TO_PARSE = 999
 
 SPREADSHEET_MIME_TYPES = (
     "application/vnd.google-apps.spreadsheet"
@@ -148,7 +149,7 @@ class SheetDownloader(object):
         print("Saving {} sheets to {}...".format(len(results["sheets"]), out_dir))
         for sheet in results["sheets"]:
             name = sheet["properties"]["title"]
-            cell_range = "'{}'!A1:Z200".format(name)
+            cell_range = "'{}'!A1:Z{}".format(name, NROWS_TO_PARSE)
             out_file = os.path.join(out_dir, "{}.tsv".format(name))
             self.write_values_to_tsv(self.get_sheet_values(sheet_id, cell_range), out_file)
 

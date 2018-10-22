@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 from amf_check_writer.cvs.base import BaseCV
 from amf_check_writer.yaml_check import YamlCheck
-from amf_check_writer.exceptions import CVParseError
+from amf_check_writer.exceptions import CVParseError, DimensionsSheetNoRowsError
 
 
 class DimensionsCV(BaseCV, YamlCheck):
@@ -20,7 +20,8 @@ class DimensionsCV(BaseCV, YamlCheck):
                     "units": row["units"]
                 }
         if not cv[ns]:
-            raise CVParseError("No dimensions found")
+            raise DimensionsSheetNoRowsError("No dimensions found for this product. "
+                                             "We can safely IGNORE this.")
         return cv
 
     def get_yaml_checks(self):
