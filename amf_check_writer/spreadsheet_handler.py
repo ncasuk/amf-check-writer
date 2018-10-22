@@ -12,7 +12,7 @@ from amf_check_writer.yaml_check import (YamlCheck, WrapperYamlCheck,
                                          FileInfoCheck, FileStructureCheck,
                                          GlobalAttrCheck)
 from amf_check_writer.pyessv_writer import PyessvWriter
-from amf_check_writer.exceptions import CVParseError
+from amf_check_writer.exceptions import CVParseError, DimensionsSheetNoRowsError
 
 
 class DeploymentModes(Enum):
@@ -202,6 +202,9 @@ class SpreadsheetHandler(object):
             with open(full_path) as tsv_file:
                 try:
                     yield cls(tsv_file, facets)
+                except DimensionsSheetNoRowsError as ex:
+                    # Ignore if there is no data in the Dimensions worksheet
+                    pass
                 except CVParseError as ex:
                     print("WARNING: Failed to parse '{}': {}"
                           .format(full_path, ex), file=sys.stderr)
