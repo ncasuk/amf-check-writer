@@ -850,6 +850,15 @@ class TestGlobalAttributeRegexes(BaseTest):
                     "7",
                 ]
             },
+            "String: min 1 character": {
+                "match": [
+                    "hello",
+                    "-_"
+                ],
+                "no_match": [
+                    ""
+                ]
+            },
             "Integer": {
                 "match": [
                     "123456",

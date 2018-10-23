@@ -158,7 +158,7 @@ class GlobalAttrCheck(YamlCheck):
         }
         # Regexes based on a regex in the rule column
         regex_rules = {
-            r"String: min (?P<count>\d+) characters":
+            r"String: min (?P<count>\d+) characters?":
                 lambda m: r".{" + str(m.group("count")) + r",}"
         }
 
