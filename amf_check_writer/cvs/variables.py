@@ -14,6 +14,7 @@ class VariablesCV(BaseCV, YamlCheck):
     """
     # Attributes whose value should be interpreted as a float instead of string
     NUMERIC_TYPES = ("valid_min", "valid_max", "_FillValue")
+    TO_IGNORE = ("name",)
 
     def parse_tsv(self, reader):
         ns = self.namespace
@@ -28,6 +29,9 @@ class VariablesCV(BaseCV, YamlCheck):
 
                 current_var = row["Variable"]
                 cv[ns][current_var] = OrderedDict()
+
+            elif row["Attribute"] in self.TO_IGNORE:
+                continue
 
             elif row["Attribute"] and row["Value"]:
                 attr = row["Attribute"]

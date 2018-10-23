@@ -149,10 +149,10 @@ class GlobalAttrCheck(YamlCheck):
             "Integer": r"-?\d+",
             "Valid email": r"[^@\s]+@[^@\s]+\.[^\s@]+",
             "Valid URL": r"https?://[^\s]+\.[^\s]*[^\s\.](/[^\s]+)?",
-            "Valid URL|N/A": r"(https?://[^\s]+\.[^\s]*[^\s\.](/[^\s]+))|" + _NOT_APPLICABLE_RULES,
+            "Valid URL _or_ N/A": r"(https?://[^\s]+\.[^\s]*[^\s\.](/[^\s]+))|" + _NOT_APPLICABLE_RULES,
             "Match: vN.M": r"v\d\.\d",
             "Match: YYYY-MM-DDThh:mm:ss\.\d+": "\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?",
-            "Match: YYYY-MM-DDThh:mm:ss\.\d+|N/A": 
+            "Match: YYYY-MM-DDThh:mm:ss\.\d+ _or_ N/A": 
                  "(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?)|" + _NOT_APPLICABLE_RULES,
             "Exact match: <number> m": r"-?\d+(\.\d+)? m",
         }

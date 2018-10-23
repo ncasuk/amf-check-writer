@@ -99,11 +99,9 @@ class TestVariablesAndDimensionsGeneration(BaseTest):
         assert decoded[0] == {
             "product_my-great-product_variable": {
                 "wind_speed": {
-                    "name": "wind_speed",
                     "type": "float32"
                 },
                 "eastward_wind": {
-                    "name": "eastward_wind",
                     "units": "m s-1"
                 }
             }
@@ -149,7 +147,7 @@ class TestVariablesAndDimensionsGeneration(BaseTest):
             ["", "name", "wind_speed"],
             ["", "", ""],
             ["", "type", "float32"]
-        ]) == {"wind_speed": {"name": "wind_speed", "type": "float32"}}
+        ]) == {"wind_speed": {"type": "float32"}}
 
     def test_question_marks(self, tmpdir):
         """
@@ -194,7 +192,7 @@ class TestVariablesAndDimensionsGeneration(BaseTest):
             ["", "name", " wind_speed   "],
             ["", "", "  "],
             ["", "type", "float32 "]
-        ]) == {"wind_speed": {"name": "wind_speed", "type": "float32"}}
+        ]) == {"wind_speed": {"type": "float32"}}
 
 
     def test_list_value(self, spreadsheets_dir):
@@ -208,7 +206,6 @@ class TestVariablesAndDimensionsGeneration(BaseTest):
             ["", "flag_meanings", "one |two|three   |four"]
         ]) == {
             "wind_speed": {
-                "name": "wind_speed",
                 "flag_meanings": ["one", "two", "three", "four"]
             }
         }
@@ -888,7 +885,7 @@ class TestGlobalAttributeRegexes(BaseTest):
                     "2018-01-01T00:00:00.123abc",
                 ]
             },
-            "Match: YYYY-MM-DDThh:mm:ss\.\d+|N/A": {
+            "Match: YYYY-MM-DDThh:mm:ss\.\d+ _or_ N/A": {
                 "match": [
                     "2018-01-01T00:00:00.2345345",
                     "N/A", "NA", "N A", "na",
@@ -945,7 +942,7 @@ class TestGlobalAttributeRegexes(BaseTest):
                     "ftp://data.somewhere.org",
                 ]
             },
-            "Valid URL|N/A": {
+            "Valid URL _or_ N/A": {
                 "match": [
                     "https://www.ncas.ac.uk/en/about-ncas",
                     "N/A",
