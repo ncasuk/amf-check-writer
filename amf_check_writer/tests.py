@@ -879,6 +879,20 @@ class TestGlobalAttributeRegexes(BaseTest):
                     "2018-01-01T00:00:00.123abc",
                 ]
             },
+            "Match: YYYY-MM-DDThh:mm:ss\.\d+|N/A": {
+                "match": [
+                    "2018-01-01T00:00:00.2345345",
+                    "N/A", "NA", "N A", "na",
+                    "not available",
+                    "Not applicable"
+                ],
+                "no_match": [
+                    "snot available",
+                    "abcd-ef-ghT00:00:00",
+                    "N  AA",
+                    "NOT Applicable"
+                ]
+            },
             "Valid email": {
                 "match": [
                     "hello@there.com",
@@ -920,6 +934,17 @@ class TestGlobalAttributeRegexes(BaseTest):
                     # Although the name is valid URL, it really means valid
                     # http[s] URL, so non-HTTP schemes should not be allowed
                     "ftp://data.somewhere.org",
+                ]
+            },
+            "Valid URL|N/A": {
+                "match": [
+                    "https://www.ncas.ac.uk/en/about-ncas",
+                    "N/A",
+                    "Not available"
+                ],
+                "no_match": [
+                    "http://ncas.ac.uk sdfsd.",
+                    "Noot avaalable"
                 ]
             },
             "Exact match: <number> m": {

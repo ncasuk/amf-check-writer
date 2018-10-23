@@ -141,12 +141,19 @@ class GlobalAttrCheck(YamlCheck):
             raise InvalidRowError()
 
         # Regexes for exact matches in the rule column
+        _NOT_APPLICABLE_RULES = "(N/A)|(NA)|(N A)|(n/a)|(na)|(n a)|" \
+                 "(Not Applicable)|(Not applicable)|(Not available)|(Not Available)|" \
+                 "(not applicable)|(not available)"
+
         static_rules = {
             "Integer": r"-?\d+",
             "Valid email": r"[^@\s]+@[^@\s]+\.[^\s@]+",
             "Valid URL": r"https?://[^\s]+\.[^\s]*[^\s\.](/[^\s]+)?",
+            "Valid URL|N/A": r"(https?://[^\s]+\.[^\s]*[^\s\.](/[^\s]+))|" + _NOT_APPLICABLE_RULES,
             "Match: vN.M": r"v\d\.\d",
             "Match: YYYY-MM-DDThh:mm:ss\.\d+": "\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?",
+            "Match: YYYY-MM-DDThh:mm:ss\.\d+|N/A": 
+                 "(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?)|" + _NOT_APPLICABLE_RULES,
             "Exact match: <number> m": r"-?\d+(\.\d+)? m",
         }
         # Regexes based on a regex in the rule column
@@ -160,7 +167,9 @@ class GlobalAttrCheck(YamlCheck):
             regex = static_rules[rule]
         except KeyError:
             for rule_regex, func in regex_rules.items():
+
                 match = re.match(rule_regex, rule)
+
                 if match:
                     regex = func(match)
                     break
