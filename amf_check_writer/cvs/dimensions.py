@@ -35,7 +35,8 @@ class DimensionsCV(BaseCV, YamlCheck):
                 "parameters": {
                     "dim_id": dim_name,
                     "vocabulary_ref": vocab_ref,
-                    "pyessv_namespace": self.namespace
+                    "pyessv_namespace": self.namespace,
+                    "ignore_coord_var_check": ("index" in dim_name)
                 },
                 "comments": ("Checks the dimension attributes for '{}'"
                              .format(dim_name))
