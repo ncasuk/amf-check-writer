@@ -10,7 +10,11 @@ import time
 import argparse
 
 import httplib2
+from pygdrive3 import service
+
 from apiclient import discovery
+from apiclient import http
+
 
 from amf_check_writer.credentials import get_credentials
 
@@ -26,8 +30,11 @@ SPREADSHEET_MIME_TYPES = (
 FOLDER_MIME_TYPE = "application/vnd.google-apps.folder"
 
 FOLDERS_TO_SKIP = (
-    "products under development"
+    "products under development",
+    "TO_DELETE_SOON",
+    "Archive_1"
 )
+
 
 API_CALL_TIMES = []
 
@@ -82,6 +89,12 @@ class SheetDownloader(object):
         discovery_url = ("https://sheets.googleapis.com/$discovery/rest?version=v4")
         self.sheets_api = discovery.build("sheets", "v4", http=sheets_http,
                                           discoveryServiceUrl=discovery_url)
+
+        # Also authenticate to separate downloder library for raw XLSX downloads
+        drive_service = service.DriveService(self.secrets_file)
+        drive_service.auth()
+ 
+        self.drive_service = drive_service.drive_service
 
     def run(self):
         self.find_all_spreadsheets(self.save_spreadsheet_callback())
@@ -142,6 +155,13 @@ class SheetDownloader(object):
         """
         Download each sheet of a spreadsheet as a TSV file and save them in the given
         output directory.
+        Also download the raw spreadsheet. 
+
+        Spreadsheets are saved in two formats in the following structure:
+
+            .../spreadsheets/<spreadsheet_name>/*.tsv - tab-delimited files
+            .../raw-spreadsheets/<spreadsheet_name> - XLSX file
+
         """
         # Get spreadsheet as a whole and iterate through each sheet
         results = self.get_spreadsheet(sheet_id)
@@ -153,10 +173,28 @@ class SheetDownloader(object):
             out_file = os.path.join(out_dir, "{}.tsv".format(name))
             self.write_values_to_tsv(self.get_sheet_values(sheet_id, cell_range), out_file)
 
+        # Now download the raw spreadsheet 
+        raw_dir = os.path.dirname(out_dir).replace('/spreadsheets', '/raw-spreadsheets')
+        if not os.path.isdir(raw_dir): os.makedirs(raw_dir)
+
+        raw_spreadsheet_file = out_dir.replace('/spreadsheets/', '/raw-spreadsheets/')
+        print("Saving raw spreadsheet to: {}...".format(raw_spreadsheet_file))
+
+        request = self.drive_service.files().export_media(fileId=sheet_id,
+              mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+        with open(raw_spreadsheet_file, 'wb') as fh:
+            downloader = http.MediaIoBaseDownload(fh, request)
+
+            done = False
+            while done is False:
+                status, done = downloader.next_chunk()
+
     def save_spreadsheet_callback(self):
         """
         Return a callback function to pass to `find_all_spreadsheets` that downloads
-        and saves sheets to a directory under `self.out_dir`
+        and saves sheets to a directory under `self.out_dir`.
+
         """
         def callback(name, sheet_id, parent_folder):
             target_dir = os.path.join(self.out_dir, parent_folder, name)
