@@ -35,6 +35,28 @@ FOLDERS_TO_SKIP = (
     "Archive_1"
 )
 
+ALLOWED_WORKSHEET_NAMES = (
+    "creators",
+    "data-products",
+    "dimensions-air",
+    "dimensions-land",
+    "dimensions-sea",
+    "dimensions-specific",
+    "dimensions-trajectory",
+    "file-naming",
+    "global-attributes-specific",
+    "global-attributes",
+    "instrument-name-and-descriptors",
+    "platforms",
+    "variables-air",
+    "variables-land",
+    "variables-sea",
+    "variables-specific",
+    "variables-trajectory",
+)
+AWN = ALLOWED_WORKSHEET_NAMES
+
+
 
 API_CALL_TIMES = []
 
@@ -46,7 +68,7 @@ def api_call(func):
     """
     def inner(*args, **kwargs):
         # Rate limit is 'max_request' requests per 'min_time' seconds
-        max_requests = 100
+        max_requests = 50
         min_time = 120
 
         now = time.time()
@@ -59,7 +81,7 @@ def api_call(func):
         # If 100 or more then wait long enough to make this next request
         if len(API_CALL_TIMES) >= max_requests:
             n = min_time - now + API_CALL_TIMES[0] + 2 # Add 2s leeway...
-            print("Waiting {} seconds to avoid reaching rate limit...".format(int(n)))
+            print("[WARNING] Waiting {} seconds to avoid reaching rate limit...".format(int(n)))
             time.sleep(n)
 
         API_CALL_TIMES.append(time.time())
@@ -76,7 +98,10 @@ class SheetDownloader(object):
     """
 
     def __init__(self, out_dir, secrets_file=None):
-        self.out_dir = out_dir
+        self.out_dir = os.path.join(out_dir, 'product-definitions')
+        if not os.path.isdir(self.out_dir):
+            os.mkdir(self.out_dir)
+
         self.secrets_file = secrets_file
 
         # Authenticate and get API handles
@@ -129,7 +154,7 @@ class SheetDownloader(object):
         for f in self.get_folder_children(root_id):
             if f["mimeType"] == FOLDER_MIME_TYPE:
                 if f["name"] in FOLDERS_TO_SKIP:
-                    print("Skipping folder '{}'".format(f["name"]))
+                    print("[INFO] Skipping folder '{}'".format(f["name"]))
                     continue
 
                 new_folder = os.path.join(folder_name, f["name"])
@@ -151,39 +176,56 @@ class SheetDownloader(object):
                                    for cell in row]))
                 f.write(os.linesep)
 
-    def download_all_sheets(self, sheet_id, out_dir):
+    def download_all_sheets(self, sheet_id, sheet_name):
         """
-        Download each sheet of a spreadsheet as a TSV file and save them in the given
+        Download each sheet of a spreadsheet as a TSV file and save them to an
         output directory.
-        Also download the raw spreadsheet. 
+
+        Also download the raw spreadsheet and save that 
 
         Spreadsheets are saved in two formats in the following structure:
 
-            .../spreadsheets/<spreadsheet_name>/*.tsv - tab-delimited files
-            .../raw-spreadsheets/<spreadsheet_name> - XLSX file
+            .../product-definitions/tsv/<spreadsheet_name>/*.tsv - tab-delimited files
+            .../product-definitions/spreadsheet/<spreadsheet_name>.xlsx - XLSX file
 
         """
         # Get spreadsheet as a whole and iterate through each sheet
         results = self.get_spreadsheet(sheet_id)
 
-        print("Saving {} sheets to {}...".format(len(results["sheets"]), out_dir))
+        print("[INFO] Saving {} sheets to {}...".format(len(results["sheets"]), self.out_dir))
+        sheet_name_no_xlsx = sheet_name[:-5]
+        
+        # Validate sheet name
+        if sheet_name_no_xlsx + '.xlsx' != sheet_name:
+            raise Exception('Sheet does not have expected name with ".xlsx" extension: {}'.format(sheet_name))
+
+        tsv_dir = os.path.join(self.out_dir, 'tsv', sheet_name_no_xlsx)
+        spreadsheet_dir = os.path.join(self.out_dir, 'spreadsheet')
+        
+        for sdir in (tsv_dir, spreadsheet_dir):
+            if not os.path.isdir(sdir):
+                os.makedirs(sdir)
+
+        print('[INFO] Saving TSV files to: {}...'.format(tsv_dir))
         for sheet in results["sheets"]:
             name = sheet["properties"]["title"]
+
+            # Check worksheet name is valid
+            if name not in AWN:
+                print('[ERROR] Worksheet name not recognised: {}'.format(name))
+
             cell_range = "'{}'!A1:Z{}".format(name, NROWS_TO_PARSE)
-            out_file = os.path.join(out_dir, "{}.tsv".format(name))
+            out_file = os.path.join(tsv_dir, "{}.tsv".format(name))
             self.write_values_to_tsv(self.get_sheet_values(sheet_id, cell_range), out_file)
 
         # Now download the raw spreadsheet 
-        raw_dir = os.path.dirname(out_dir).replace('/spreadsheets', '/raw-spreadsheets')
-        if not os.path.isdir(raw_dir): os.makedirs(raw_dir)
-
-        raw_spreadsheet_file = out_dir.replace('/spreadsheets/', '/raw-spreadsheets/')
-        print("Saving raw spreadsheet to: {}...".format(raw_spreadsheet_file))
+        spreadsheet_file = os.path.join(spreadsheet_dir, sheet_name)
+        print("[INFO] Saving spreadsheet to: {}...".format(spreadsheet_file))
 
         request = self.drive_service.files().export_media(fileId=sheet_id,
               mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
-        with open(raw_spreadsheet_file, 'wb') as fh:
+        with open(spreadsheet_file, 'wb') as fh:
             downloader = http.MediaIoBaseDownload(fh, request)
 
             done = False
@@ -197,11 +239,12 @@ class SheetDownloader(object):
 
         """
         def callback(name, sheet_id, parent_folder):
-            target_dir = os.path.join(self.out_dir, parent_folder, name)
-            if not os.path.isdir(target_dir):
-                os.makedirs(target_dir)
 
-            self.download_all_sheets(sheet_id, target_dir)
+#            target_dir = os.path.join(self.out_dir, parent_folder, name)
+#            if not os.path.isdir(target_dir):
+#                os.makedirs(target_dir)
+
+            self.download_all_sheets(sheet_id, name)
 
         return callback
 

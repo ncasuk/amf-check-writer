@@ -19,11 +19,13 @@ class VariablesCV(BaseCV, YamlCheck):
     def parse_tsv(self, reader):
         ns = self.namespace
         cv = {ns: OrderedDict()}
+
         for row in reader:
+
             if row["Variable"]:
                 # Variable names containing ??? cause problems with pyessv,
                 # and are probably not correct anyway
-                if row["Variable"].endswith("?"):
+                if "?" in row["Variable"]:
                     raise CVParseError("Invalid variable name '{}'"
                                        .format(row["Variable"]))
 

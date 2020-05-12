@@ -19,20 +19,20 @@ class DeploymentModes(Enum):
     """
     Enumeration of valid deployment modes
     """
-    LAND = "Land"
-    SEA = "Sea"
-    AIR = "Air"
+    LAND = "land"
+    SEA = "sea"
+    AIR = "air"
 
 
 SPREADSHEET_NAMES = {
-    "products_dir": "Product Definition Spreadsheets",
-    "common_spreadsheet": "Common.xlsx",
-    "vocabs_spreadsheet": "Vocabularies.xlsx",
-    "global_attrs_worksheet": "Global Attributes.tsv",
-    "instruments_worksheet": "Instrument Name & Descriptors.tsv",
-    "data_products_worksheet": "Data Products.tsv",
-    "platforms_worksheet": "Platforms.tsv",
-    "scientists_worksheet": "Creators.tsv"
+#    "products_dir": "product-definitions",
+    "common_spreadsheet": "_common",
+    "vocabs_spreadsheet": "_vocabularies",
+    "global_attrs_worksheet": "global-attributes.tsv",
+    "instruments_worksheet": "instrument-name-and-descriptors",
+    "data_products_worksheet": "data-products",
+    "platforms_worksheet": "platforms",
+    "scientists_worksheet": "creators"
 }
 
 
@@ -54,8 +54,8 @@ class SpreadsheetHandler(object):
     # Mapping from variables/dimensions filename prefix to CV class and name
     # to use in facets
     VAR_DIM_FILENAME_MAPPING = {
-        "Variables": {"name": "variable", "cls": VariablesCV},
-        "Dimensions": {"name": "dimension", "cls": DimensionsCV},
+        "variables": {"name": "variable", "cls": VariablesCV},
+        "dimensions": {"name": "dimension", "cls": DimensionsCV},
     }
 
     def __init__(self, spreadsheets_dir):
@@ -91,12 +91,13 @@ class SpreadsheetHandler(object):
             FileStructureCheck(["file_structure"]),
         ]
         global_attrs_path = os.path.join(
-            self.path, SPREADSHEET_NAMES["common_spreadsheet"],
+            self.path, 'tsv', SPREADSHEET_NAMES["common_spreadsheet"],
             SPREADSHEET_NAMES["global_attrs_worksheet"]
         )
         if self._isfile(global_attrs_path):
             with open(global_attrs_path) as tsv_file:
                 global_checks.append(GlobalAttrCheck(tsv_file, ["global_attrs"]))
+
         all_checks += global_checks
 
         # Group product CVs by name, and common product CVs by deployment mode
@@ -139,13 +140,19 @@ class SpreadsheetHandler(object):
         :param ext:        file extension to use
         """
         count = 0
+
         for f in files:
+
             fname = f.get_filename(ext)
             outpath = os.path.join(output_dir, fname)
+
             with open(outpath, "w") as out_file:
                 out_file.write(callback(f))
                 count += 1
-        print("{} files written".format(count))
+   
+            print('[INFO] Wrote: {}'.format(outpath))
+
+        print("[INFO] {} files written".format(count))
 
     def get_all_cvs(self, base_class=None):
         """
@@ -181,13 +188,15 @@ class SpreadsheetHandler(object):
                 facets=["scientist"]
             )
         ]
+
         cv_parse_infos += self._get_common_var_dim_parse_info()
         per_product_cvs = list(self._get_per_product_parse_info())
         cv_parse_infos += per_product_cvs
+
         if not per_product_cvs:
             print(
-                "WARNING: No product variable/dimension spreadsheets found in {}"
-                .format(os.path.join(self.path, SPREADSHEET_NAMES["products_dir"])),
+                "[WARNING] No product variable/dimension spreadsheets found in {}"
+                .format(self.path),
                 file=sys.stderr
             )
 
@@ -198,6 +207,8 @@ class SpreadsheetHandler(object):
             full_path = os.path.join(self.path, path)
             if not self._isfile(full_path):
                 continue
+
+            print('[INFO] Extracting content from: {}'.format(full_path))
 
             with open(full_path) as tsv_file:
                 try:
@@ -215,17 +226,28 @@ class SpreadsheetHandler(object):
         CVs
         """
         sheet_regex = re.compile(
-            r"(?P<name>[a-zA-Z0-9-]+)/(?P=name)\.xlsx/(?P<type>Variables|Dimensions) - Specific.tsv$"
+            r"/tsv/(?P<name>[a-zA-Z0-9-]+)/(?P<type>variables|dimensions)-specific\.tsv$"
+#            r"(?P<name>[a-zA-Z0-9-]+)/(?P=name)\.xlsx/(?P<type>Variables|Dimensions) - Specific.tsv$"
         )
-        prods_dir = os.path.join(self.path, SPREADSHEET_NAMES["products_dir"])
+        ignore_match = re.compile(r"/(_common|_vocabularies)/")
+
+        prods_dir = os.path.join(self.path, 'tsv')
+#        prods_dir = os.path.join(self.path, SPREADSHEET_NAMES["products_dir"], 'tsv')
+
         for dirpath, _dirnames, filenames in os.walk(prods_dir):
             for fname in filenames:
+              
                 path = os.path.join(dirpath, fname)
                 match = sheet_regex.search(path)
-                if not match:
+
+                if ignore_match.search(path):
+                    # Ignore silently if not products
+                    continue
+                elif not match:
                     print("WARNING: No match for '{}'".format(path))
                     continue
 
+                print('[INFO] Working on: {}'.format(path))
                 prod_name = match.group("name")
                 cv_type = match.group("type")
                 cls = self.VAR_DIM_FILENAME_MAPPING[cv_type]["cls"]
@@ -239,12 +261,14 @@ class SpreadsheetHandler(object):
         Return iterator of CVParseInfo objects for common variable/dimension
         CVs
         """
-        common_dir = os.path.join(self.path, SPREADSHEET_NAMES["common_spreadsheet"])
+        common_dir = os.path.join(self.path, 'tsv', SPREADSHEET_NAMES["common_spreadsheet"])
 
         for prefix, obj in self.VAR_DIM_FILENAME_MAPPING.items():
+
             for mode in DeploymentModes:
                 dep_m = mode.value
-                filename = "{type} - {dep_m}.tsv".format(type=prefix, dep_m=dep_m)
+                filename = "{type}-{dep_m}.tsv".format(type=prefix, dep_m=dep_m)
+
                 yield CVParseInfo(
                     path=os.path.join(common_dir, filename),
                     cls=obj["cls"],
