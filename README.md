@@ -224,7 +224,7 @@ amf-checker /path/to/data/*.nc
 
 ## Testing
 
-There are tests -- run using:
+There are tests - run using:
 
 ```
 pytest amf_check_writer/tests.py
