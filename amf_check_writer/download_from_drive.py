@@ -46,7 +46,8 @@ ALLOWED_WORKSHEET_NAMES = (
     "file-naming",
     "global-attributes-specific",
     "global-attributes",
-    "instrument-name-and-descriptors",
+    "ncas-instrument-name-and-descriptors",
+    "community-instrument-name-and-descriptors",
     "platforms",
     "variables-air",
     "variables-land",
@@ -68,7 +69,7 @@ def api_call(func):
     """
     def inner(*args, **kwargs):
         # Rate limit is 'max_request' requests per 'min_time' seconds
-        max_requests = 50
+        max_requests = 20
         min_time = 120
 
         now = time.time()
@@ -172,7 +173,7 @@ class SheetDownloader(object):
         """
         with open(out_file, "w") as f:
             for row in values:
-                f.write("\t".join([cell.strip().replace("\n", "|").encode("utf-8")
+                f.write("\t".join([cell.strip().replace("\n", "|")
                                    for cell in row]))
                 f.write(os.linesep)
 
@@ -219,18 +220,18 @@ class SheetDownloader(object):
             self.write_values_to_tsv(self.get_sheet_values(sheet_id, cell_range), out_file)
 
         # Now download the raw spreadsheet 
-        spreadsheet_file = os.path.join(spreadsheet_dir, sheet_name)
-        print("[INFO] Saving spreadsheet to: {}...".format(spreadsheet_file))
+        # spreadsheet_file = os.path.join(spreadsheet_dir, sheet_name)
+        # print("[INFO] Saving spreadsheet to: {}...".format(spreadsheet_file))
 
-        request = self.drive_service.files().export_media(fileId=sheet_id,
-              mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        # request = self.drive_service.files().export_media(fileId=sheet_id,
+        #       mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
-        with open(spreadsheet_file, 'wb') as fh:
-            downloader = http.MediaIoBaseDownload(fh, request)
+        # with open(spreadsheet_file, 'wb') as fh:
+        #     downloader = http.MediaIoBaseDownload(fh, request)
 
-            done = False
-            while done is False:
-                status, done = downloader.next_chunk()
+        #     done = False
+        #     while done is False:
+        #         status, done = downloader.next_chunk()
 
     def save_spreadsheet_callback(self):
         """

@@ -29,7 +29,8 @@ SPREADSHEET_NAMES = {
     "common_spreadsheet": "_common",
     "vocabs_spreadsheet": "_vocabularies",
     "global_attrs_worksheet": "global-attributes.tsv",
-    "instruments_worksheet": "instrument-name-and-descriptors",
+    "ncas_instruments_worksheet": "ncas-instrument-name-and-descriptors",
+    "community_instruments_worksheet": "community-instrument-name-and-descriptors",
     "data_products_worksheet": "data-products",
     "platforms_worksheet": "platforms",
     "scientists_worksheet": "creators"
@@ -168,7 +169,12 @@ class SpreadsheetHandler(object):
                                 SPREADSHEET_NAMES[name])
         cv_parse_infos = [
             CVParseInfo(
-                path=static_path("instruments_worksheet"),
+                path=static_path("ncas_instruments_worksheet"),
+                cls=InstrumentsCV,
+                facets=["instrument"]
+            ),
+            CVParseInfo(
+                path=static_path("community_instruments_worksheet"),
                 cls=InstrumentsCV,
                 facets=["instrument"]
             ),
