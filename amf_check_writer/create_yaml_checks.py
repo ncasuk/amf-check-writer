@@ -27,6 +27,7 @@ def main():
     if not os.path.isdir(args.output_dir):
         os.mkdir(args.output_dir)
 
+    args.spreadsheets_dir = os.path.join(args.spreadsheets_dir, 'product-definitions')
     sh = SpreadsheetHandler(args.spreadsheets_dir)
     sh.write_yaml(args.output_dir)
 

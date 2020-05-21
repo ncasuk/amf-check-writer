@@ -28,7 +28,7 @@ SPREADSHEET_NAMES = {
 #    "products_dir": "product-definitions",
     "common_spreadsheet": "_common",
     "vocabs_spreadsheet": "_vocabularies",
-    "global_attrs_worksheet": "global-attributes.tsv",
+    "global_attrs_worksheet": "global-attributes",
     "ncas_instruments_worksheet": "ncas-instrument-name-and-descriptors",
     "community_instruments_worksheet": "community-instrument-name-and-descriptors",
     "data_products_worksheet": "data-products",
