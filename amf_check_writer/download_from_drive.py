@@ -21,6 +21,7 @@ from amf_check_writer.credentials import get_credentials
 
 # ID of the top level folder in Google Drive
 ROOT_FOLDER_ID = "1TGsJBltDttqs6nsbUwopX5BL_q8AU-5X"
+CHOSEN_VERSION = "v2.0"
 NROWS_TO_PARSE = 999
 
 SPREADSHEET_MIME_TYPES = (
@@ -116,11 +117,12 @@ class SheetDownloader(object):
         self.sheets_api = discovery.build("sheets", "v4", http=sheets_http,
                                           discoveryServiceUrl=discovery_url)
 
-        # Also authenticate to separate downloder library for raw XLSX downloads
-        drive_service = service.DriveService(self.secrets_file)
-        drive_service.auth()
+        # # Also authenticate to separate downloder library for raw XLSX downloads
+        # # This isn't currently working, so using the above API handle.
+        # drive_service = service.DriveService(self.secrets_file)
+        # drive_service.auth()
  
-        self.drive_service = drive_service.drive_service
+        # self.drive_service = drive_service.drive_service
 
     def run(self):
         self.find_all_spreadsheets(self.save_spreadsheet_callback())
@@ -156,6 +158,12 @@ class SheetDownloader(object):
             if f["mimeType"] == FOLDER_MIME_TYPE:
                 if f["name"] in FOLDERS_TO_SKIP:
                     print("[INFO] Skipping folder '{}'".format(f["name"]))
+                    continue
+                
+                if f["name"] in CHOSEN_VERSION:
+                    print("[INFO] Found and using '{}'".format(f["name"]))
+                else:
+                    print("[INFO] Skipping folder with '{}' as we want '{}'".format(f["name"],CHOSEN_VERSION))
                     continue
 
                 new_folder = os.path.join(folder_name, f["name"])
@@ -220,18 +228,18 @@ class SheetDownloader(object):
             self.write_values_to_tsv(self.get_sheet_values(sheet_id, cell_range), out_file)
 
         # Now download the raw spreadsheet 
-        # spreadsheet_file = os.path.join(spreadsheet_dir, sheet_name)
-        # print("[INFO] Saving spreadsheet to: {}...".format(spreadsheet_file))
+        spreadsheet_file = os.path.join(spreadsheet_dir, sheet_name)
+        print("[INFO] Saving spreadsheet to: {}...".format(spreadsheet_file))
 
-        # request = self.drive_service.files().export_media(fileId=sheet_id,
-        #       mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        request = self.drive_api.files().export_media(fileId=sheet_id,
+              mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
-        # with open(spreadsheet_file, 'wb') as fh:
-        #     downloader = http.MediaIoBaseDownload(fh, request)
+        with open(spreadsheet_file, 'wb') as fh:
+            downloader = http.MediaIoBaseDownload(fh, request)
 
-        #     done = False
-        #     while done is False:
-        #         status, done = downloader.next_chunk()
+            done = False
+            while done is False:
+                status, done = downloader.next_chunk()
 
     def save_spreadsheet_callback(self):
         """
