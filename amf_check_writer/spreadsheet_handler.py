@@ -7,7 +7,8 @@ from collections import namedtuple
 from enum import Enum
 
 from amf_check_writer.cvs import (BaseCV, VariablesCV, ProductsCV, PlatformsCV,
-                                  InstrumentsCV, DimensionsCV, ScientistsCV)
+                                  InstrumentsCV, DimensionsCV, ScientistsCV,
+                                  GlobalAttributesCV)
 from amf_check_writer.yaml_check import (YamlCheck, WrapperYamlCheck,
                                          FileInfoCheck, FileStructureCheck,
                                          GlobalAttrCheck)
@@ -57,6 +58,7 @@ class SpreadsheetHandler(object):
     VAR_DIM_FILENAME_MAPPING = {
         "variables": {"name": "variable", "cls": VariablesCV},
         "dimensions": {"name": "dimension", "cls": DimensionsCV},
+        "global-attributes": {"name": "global-attributes", "cls": GlobalAttributesCV}
     }
 
     def __init__(self, spreadsheets_dir):
@@ -243,9 +245,9 @@ class SpreadsheetHandler(object):
         for dirpath, _dirnames, filenames in os.walk(prods_dir):
             for fname in filenames:
 
-                if "global-attributes" in fname:
-                    print('WARNING: Product specific global attributes not supported yet.')
-                    continue
+                # if "global-attributes" in fname:
+                #     print('WARNING: Product specific global attributes not supported yet.')
+                #     continue
                 
                 path = os.path.join(dirpath, fname)
                 match = sheet_regex.search(path)
