@@ -16,7 +16,7 @@ SCOPES = {
     # If modifying these scopes, delete your previously saved credentials
     # at ~/.credentials/sheets.googleapis.com-python-quickstart.json
     "sheets": "https://www.googleapis.com/auth/spreadsheets.readonly",
-    "drive":  "https://www.googleapis.com/auth/drive.metadata.readonly"
+    "drive":  "https://www.googleapis.com/auth/drive.readonly"
 }
 
 

@@ -7,7 +7,7 @@ import re
 import sys
 import json
 import yaml
-from StringIO import StringIO
+from io import StringIO
 
 import pytest
 
@@ -23,7 +23,7 @@ class BaseTest(object):
     def spreadsheets_dir(self, tmpdir):
         s = tmpdir.mkdir("spreadsheets")
         s.mkdir("Common.xlsx")
-        s.mkdir("Product Definition Spreadsheets")
+        s.mkdir("product-definitions")
         vars_sheet = s.mkdir("Vocabularies.xlsx")
         return s
 
@@ -54,9 +54,9 @@ class TestVariablesAndDimensionsGeneration(BaseTest):
     def test_basic(self, spreadsheets_dir, tmpdir):
         # variables
         s_dir = spreadsheets_dir
-        prod = s_dir.join("Product Definition Spreadsheets")
-        var = (prod.mkdir("my-great-product").mkdir("my-great-product.xlsx")
-                   .join("Variables - Specific.tsv"))
+        prod = s_dir.join("product-definitions")
+        var = (prod.mkdir("tsv").mkdir("my-great-product")
+                   .join("variables-specific.tsv"))
         var.write("\n".join((
             "Variable\tAttribute\tValue",
             "wind_speed\t\t",

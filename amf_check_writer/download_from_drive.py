@@ -21,6 +21,7 @@ from amf_check_writer.credentials import get_credentials
 
 # ID of the top level folder in Google Drive
 ROOT_FOLDER_ID = "1TGsJBltDttqs6nsbUwopX5BL_q8AU-5X"
+CHOSEN_VERSION = "v2.0"
 NROWS_TO_PARSE = 999
 
 SPREADSHEET_MIME_TYPES = (
@@ -46,7 +47,8 @@ ALLOWED_WORKSHEET_NAMES = (
     "file-naming",
     "global-attributes-specific",
     "global-attributes",
-    "instrument-name-and-descriptors",
+    "ncas-instrument-name-and-descriptors",
+    "community-instrument-name-and-descriptors",
     "platforms",
     "variables-air",
     "variables-land",
@@ -68,7 +70,7 @@ def api_call(func):
     """
     def inner(*args, **kwargs):
         # Rate limit is 'max_request' requests per 'min_time' seconds
-        max_requests = 50
+        max_requests = 20
         min_time = 120
 
         now = time.time()
@@ -115,11 +117,12 @@ class SheetDownloader(object):
         self.sheets_api = discovery.build("sheets", "v4", http=sheets_http,
                                           discoveryServiceUrl=discovery_url)
 
-        # Also authenticate to separate downloder library for raw XLSX downloads
-        drive_service = service.DriveService(self.secrets_file)
-        drive_service.auth()
+        # # Also authenticate to separate downloder library for raw XLSX downloads
+        # # This isn't currently working, so using the above API handle.
+        # drive_service = service.DriveService(self.secrets_file)
+        # drive_service.auth()
  
-        self.drive_service = drive_service.drive_service
+        # self.drive_service = drive_service.drive_service
 
     def run(self):
         self.find_all_spreadsheets(self.save_spreadsheet_callback())
@@ -156,6 +159,12 @@ class SheetDownloader(object):
                 if f["name"] in FOLDERS_TO_SKIP:
                     print("[INFO] Skipping folder '{}'".format(f["name"]))
                     continue
+                
+                if f["name"] in CHOSEN_VERSION:
+                    print("[INFO] Found and using '{}'".format(f["name"]))
+                else:
+                    print("[INFO] Skipping folder with '{}' as we want '{}'".format(f["name"],CHOSEN_VERSION))
+                    continue
 
                 new_folder = os.path.join(folder_name, f["name"])
                 # Make the recursive call if we have found a sub-folder
@@ -172,7 +181,7 @@ class SheetDownloader(object):
         """
         with open(out_file, "w") as f:
             for row in values:
-                f.write("\t".join([cell.strip().replace("\n", "|").encode("utf-8")
+                f.write("\t".join([cell.strip().replace("\n", "|")
                                    for cell in row]))
                 f.write(os.linesep)
 
@@ -222,7 +231,7 @@ class SheetDownloader(object):
         spreadsheet_file = os.path.join(spreadsheet_dir, sheet_name)
         print("[INFO] Saving spreadsheet to: {}...".format(spreadsheet_file))
 
-        request = self.drive_service.files().export_media(fileId=sheet_id,
+        request = self.drive_api.files().export_media(fileId=sheet_id,
               mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
         with open(spreadsheet_file, 'wb') as fh:

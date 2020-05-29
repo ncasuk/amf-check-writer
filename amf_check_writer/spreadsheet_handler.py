@@ -28,8 +28,9 @@ SPREADSHEET_NAMES = {
 #    "products_dir": "product-definitions",
     "common_spreadsheet": "_common",
     "vocabs_spreadsheet": "_vocabularies",
-    "global_attrs_worksheet": "global-attributes.tsv",
-    "instruments_worksheet": "instrument-name-and-descriptors",
+    "global_attrs_worksheet": "global-attributes",
+    "ncas_instruments_worksheet": "ncas-instrument-name-and-descriptors",
+    "community_instruments_worksheet": "community-instrument-name-and-descriptors",
     "data_products_worksheet": "data-products",
     "platforms_worksheet": "platforms",
     "scientists_worksheet": "creators"
@@ -168,7 +169,12 @@ class SpreadsheetHandler(object):
                                 SPREADSHEET_NAMES[name])
         cv_parse_infos = [
             CVParseInfo(
-                path=static_path("instruments_worksheet"),
+                path=static_path("ncas_instruments_worksheet"),
+                cls=InstrumentsCV,
+                facets=["instrument"]
+            ),
+            CVParseInfo(
+                path=static_path("community_instruments_worksheet"),
                 cls=InstrumentsCV,
                 facets=["instrument"]
             ),
@@ -226,7 +232,7 @@ class SpreadsheetHandler(object):
         CVs
         """
         sheet_regex = re.compile(
-            r"/tsv/(?P<name>[a-zA-Z0-9-]+)/(?P<type>variables|dimensions)-specific\.tsv$"
+            r"/tsv/(?P<name>[a-zA-Z0-9-]+)/(?P<type>variables|dimensions|global-attributes)-specific\.tsv$"
 #            r"(?P<name>[a-zA-Z0-9-]+)/(?P=name)\.xlsx/(?P<type>Variables|Dimensions) - Specific.tsv$"
         )
         ignore_match = re.compile(r"/(_common|_vocabularies)/")
@@ -236,7 +242,11 @@ class SpreadsheetHandler(object):
 
         for dirpath, _dirnames, filenames in os.walk(prods_dir):
             for fname in filenames:
-              
+
+                if "global-attributes" in fname:
+                    print('WARNING: Product specific global attributes not supported yet.')
+                    continue
+                
                 path = os.path.join(dirpath, fname)
                 match = sheet_regex.search(path)
 
