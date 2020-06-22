@@ -167,7 +167,7 @@ class SpreadsheetHandler(object):
         """
         # Static CVs
         def static_path(name):
-            return os.path.join(SPREADSHEET_NAMES["vocabs_spreadsheet"],
+            return os.path.join('tsv',SPREADSHEET_NAMES["vocabs_spreadsheet"],
                                 SPREADSHEET_NAMES[name])
         cv_parse_infos = [
             CVParseInfo(
