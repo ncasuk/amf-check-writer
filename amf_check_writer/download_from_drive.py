@@ -8,6 +8,7 @@ import os
 import sys
 import time
 import argparse
+from pathlib import Path
 
 import httplib2
 from pygdrive3 import service
@@ -100,9 +101,9 @@ class SheetDownloader(object):
     """
 
     def __init__(self, out_dir, secrets_file=None):
-        self.out_dir = os.path.join(out_dir, 'product-definitions')
+        self.out_dir = os.path.join(out_dir, CHOSEN_VERSION, 'product-definitions')
         if not os.path.isdir(self.out_dir):
-            os.mkdir(self.out_dir)
+            os.makedirs(self.out_dir)
 
         self.secrets_file = secrets_file
 

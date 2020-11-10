@@ -21,7 +21,7 @@ class YamlCheck(AmfFile):
         :return: the YAML document as a string
         """
         return yaml.dump({
-            "suite_name": "{}_checks".format(self.namespace),
+            "suite_name": "{}_checks:{}".format(self.namespace,self.version),
             "description": "Check '{}' in AMF files".format(" ".join(self.facets)),
             "checks": list(self.get_yaml_checks())
         })

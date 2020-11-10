@@ -18,6 +18,7 @@ class BaseCV(AmfFile):
         self.tsv_file = tsv_file
         reader = StripWhitespaceReader(self.tsv_file, delimiter="\t")
         self.cv_dict = self.parse_tsv(reader)
+        self.version = '99.9'
 
     def to_json(self):
         """
