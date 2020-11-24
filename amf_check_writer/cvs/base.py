@@ -1,4 +1,5 @@
 import json
+import re
 from csv import DictReader
 
 from amf_check_writer.base_file import AmfFile
@@ -18,7 +19,11 @@ class BaseCV(AmfFile):
         self.tsv_file = tsv_file
         reader = StripWhitespaceReader(self.tsv_file, delimiter="\t")
         self.cv_dict = self.parse_tsv(reader)
-        self.version = '99.9'
+
+        # Find version number
+        version_regex = re.compile(r"v\d\.\d")
+        match_ver = version_regex.search(self.tsv_file.name)
+        self.version = match_ver.group()[1:]
 
     def to_json(self):
         """

@@ -236,7 +236,6 @@ class SpreadsheetHandler(object):
             r"/tsv/(?P<name>[a-zA-Z0-9-]+)/(?P<type>variables|dimensions|global-attributes)-specific\.tsv$"
 #            r"(?P<name>[a-zA-Z0-9-]+)/(?P=name)\.xlsx/(?P<type>Variables|Dimensions) - Specific.tsv$"
         )
-        version_regex = re.compile(r"v\d\.\d")
         ignore_match = re.compile(r"/(_common|_vocabularies)/")
 
         prods_dir = os.path.join(self.path, 'tsv')
@@ -247,7 +246,6 @@ class SpreadsheetHandler(object):
 
                 path = os.path.join(dirpath, fname)
                 match = sheet_regex.search(path)
-                match_ver = version_regex.search(path)
 
                 if ignore_match.search(path):
                     # Ignore silently if not products
@@ -259,9 +257,8 @@ class SpreadsheetHandler(object):
                 print('[INFO] Working on: {}'.format(path))
                 prod_name = match.group("name")
                 cv_type = match.group("type")
-                version_no = match_ver.group()[1:]
                 cls = self.VAR_DIM_FILENAME_MAPPING[cv_type]["cls"]
-                facets = ["product", prod_name, version_no,
+                facets = ["product", prod_name,
                           self.VAR_DIM_FILENAME_MAPPING[cv_type]["name"]]
                 yield CVParseInfo(os.path.relpath(path, start=self.path), cls,
                                   facets)
