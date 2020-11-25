@@ -8,7 +8,7 @@ import yaml
 
 from amf_check_writer.exceptions import InvalidRowError
 from amf_check_writer.base_file import AmfFile
-from amf_check_writer.cvs.base import StripWhitespaceReader
+from amf_check_writer.cvs.base import StripWhitespaceReader, version_finder
 
 
 class YamlCheck(AmfFile):
@@ -102,6 +102,7 @@ class GlobalAttrCheck(YamlCheck):
         reader = StripWhitespaceReader(tsv_file, delimiter="\t")
 
         self.regexes = OrderedDict()
+        self.version = version_finder(tsv_file)
         for row in reader:
             try:
                 attr, regex = GlobalAttrCheck.parse_row(row)
