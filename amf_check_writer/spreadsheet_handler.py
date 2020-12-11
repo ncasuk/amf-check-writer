@@ -118,6 +118,11 @@ class SpreadsheetHandler(object):
                         product_cvs[prod_name] = []
                     product_cvs[prod_name].append(cv)
 
+        # Find version number of the checks by looking for regex in output_dir
+        version_regex = re.compile(r"v\d\.\d")
+        match_ver = version_regex.search(tsv_file.name)
+        version_number = match_ver.group()[1:]
+
         # Create a top-level YAML check for each product/deployment-mode
         # combination
         for prod_name, prod_cvs in product_cvs.items():
@@ -128,9 +133,9 @@ class SpreadsheetHandler(object):
                 all_checks.append(WrapperYamlCheck(child_checks, facets))
 
         self._write_output_files(all_checks, YamlCheck.to_yaml_check,
-                                 output_dir, "yml")
+                                 output_dir, "yml", version_number)
 
-    def _write_output_files(self, files, callback, output_dir, ext):
+    def _write_output_files(self, files, callback, output_dir, ext, version):
         """
         Helper method to call a method on a several AmfFile objects and write
         the output to a file
@@ -149,7 +154,7 @@ class SpreadsheetHandler(object):
             outpath = os.path.join(output_dir, fname)
 
             with open(outpath, "w") as out_file:
-                out_file.write(callback(f))
+                out_file.write(callback(f,version))
                 count += 1
    
             print('[INFO] Wrote: {}'.format(outpath))

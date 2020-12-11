@@ -8,23 +8,38 @@ import yaml
 
 from amf_check_writer.exceptions import InvalidRowError
 from amf_check_writer.base_file import AmfFile
-from amf_check_writer.cvs.base import StripWhitespaceReader, version_finder
+from amf_check_writer.cvs.base import StripWhitespaceReader
 
+class CustomDumper(yaml.SafeDumper):
+    # Inserts blank lines between top-level objects: inspired by https://stackoverflow.com/a/44284819/3786245"
+    # Preserve the mapping key order. See https://stackoverflow.com/a/52621703/1497385"
+
+    def write_line_break(self, data=None):
+        super().write_line_break(data)
+        if len(self.indents) in (1,2):
+            super().write_line_break()
+
+    def represent_dict_preserve_order(self, data):
+        return self.represent_dict(data.items())
+
+CustomDumper.add_representer(OrderedDict, CustomDumper.represent_dict_preserve_order)
 
 class YamlCheck(AmfFile):
     """
     A YAML file that can be used with cc-yaml to run a suite of checks
     """
-    def to_yaml_check(self):
+    def to_yaml_check(self, version):
         """
         Use `get_yaml_checks` to write a YAML check suite for use with cc-yaml
         :return: the YAML document as a string
         """
-        return yaml.dump({
-            "suite_name": "{}_checks:{}".format(self.namespace,self.version),
-            "description": "Check '{}' in AMF files".format(" ".join(self.facets)),
-            "checks": list(self.get_yaml_checks())
-        })
+        d = OrderedDict()
+
+        d["suite_name"] = "{}_checks:{}".format(self.namespace,version)
+        d["description"] = "Check '{}' in AMF files".format(" ".join(self.facets))
+        d["checks"] = list(self.get_yaml_checks())
+
+        return yaml.dump(d, Dumper=CustomDumper)
 
     def get_yaml_checks(self):
         """
@@ -102,7 +117,6 @@ class GlobalAttrCheck(YamlCheck):
         reader = StripWhitespaceReader(tsv_file, delimiter="\t")
 
         self.regexes = OrderedDict()
-        self.version = version_finder(tsv_file)
         for row in reader:
             try:
                 attr, regex = GlobalAttrCheck.parse_row(row)
