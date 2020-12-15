@@ -72,7 +72,8 @@ class SpreadsheetHandler(object):
         :param pyessv_root:  directory to use as pyessv archive
         """
         cvs = list(self.get_all_cvs())
-        self._write_output_files(cvs, BaseCV.to_json, output_dir, "json")
+        version_number = self._find_version_number(output_dir)
+        self._write_output_files(cvs, BaseCV.to_json, output_dir, "json", version_number)
         if write_pyessv:
             writer = PyessvWriter(pyessv_root=pyessv_root)
             writer.write_cvs(cvs)
@@ -119,9 +120,7 @@ class SpreadsheetHandler(object):
                     product_cvs[prod_name].append(cv)
 
         # Find version number of the checks by looking for regex in output_dir
-        version_regex = re.compile(r"v\d\.\d")
-        match_ver = version_regex.search(tsv_file.name)
-        version_number = match_ver.group()[1:]
+        version_number = self._find_version_number(output_dir)
 
         # Create a top-level YAML check for each product/deployment-mode
         # combination
@@ -299,3 +298,15 @@ class SpreadsheetHandler(object):
             print("WARNING: Expected to find file at '{}'".format(path),
                   file=sys.stderr)
         return isfile
+
+    def _find_version_number(self,output_dir):
+
+        """
+        Finds the version number from the tsv_file path for the controlled
+        variable.
+
+        Return: version number (string)
+        """
+        version_regex = re.compile(r"v\d\.\d")
+        match_ver = version_regex.search(output_dir)
+        return match_ver.group()[1:]

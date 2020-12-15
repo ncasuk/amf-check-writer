@@ -19,9 +19,11 @@ class BaseCV(AmfFile):
         reader = StripWhitespaceReader(self.tsv_file, delimiter="\t")
         self.cv_dict = self.parse_tsv(reader)
 
-    def to_json(self):
+    def to_json(self, version):
         """
         Return JSON representation of this CV as a string
+        :param version: not used here, but I need to pass it so that the yaml
+                        checks work
         """
         return json.dumps(self.cv_dict, indent=4)
 
