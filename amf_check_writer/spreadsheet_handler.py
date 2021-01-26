@@ -29,11 +29,11 @@ SPREADSHEET_NAMES = {
     "common_spreadsheet": "_common",
     "vocabs_spreadsheet": "_vocabularies",
     "global_attrs_worksheet": "global-attributes.tsv",
-    "ncas_instruments_worksheet": "ncas-instrument-name-and-descriptors",
-    "community_instruments_worksheet": "community-instrument-name-and-descriptors",
-    "data_products_worksheet": "data-products",
-    "platforms_worksheet": "platforms",
-    "scientists_worksheet": "creators"
+    "ncas_instruments_worksheet": "ncas-instrument-name-and-descriptors.tsv",
+    "community_instruments_worksheet": "community-instrument-name-and-descriptors.tsv",
+    "data_products_worksheet": "data-products.tsv",
+    "platforms_worksheet": "platforms.tsv",
+    "scientists_worksheet": "creators.tsv"
 }
 
 
@@ -247,6 +247,10 @@ class SpreadsheetHandler(object):
 
         for dirpath, _dirnames, filenames in os.walk(prods_dir):
             for fname in filenames:
+
+                if "global-attributes" in fname:
+                    print('WARNING: Product specific global attributes not supported yet.')
+                    continue
 
                 path = os.path.join(dirpath, fname)
                 match = sheet_regex.search(path)
