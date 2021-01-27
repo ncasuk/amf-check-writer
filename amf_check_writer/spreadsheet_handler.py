@@ -7,7 +7,8 @@ from collections import namedtuple
 from enum import Enum
 
 from amf_check_writer.cvs import (BaseCV, VariablesCV, ProductsCV, PlatformsCV,
-                                  InstrumentsCV, DimensionsCV, ScientistsCV)
+                                  InstrumentsCV, DimensionsCV, ScientistsCV,
+                                  GlobalAttributesCV)
 from amf_check_writer.yaml_check import (YamlCheck, WrapperYamlCheck,
                                          FileInfoCheck, FileStructureCheck,
                                          GlobalAttrCheck)
@@ -22,6 +23,7 @@ class DeploymentModes(Enum):
     LAND = "land"
     SEA = "sea"
     AIR = "air"
+    TRAJECTORY = "trajectory"
 
 
 SPREADSHEET_NAMES = {
@@ -57,7 +59,7 @@ class SpreadsheetHandler(object):
     VAR_DIM_FILENAME_MAPPING = {
         "variables": {"name": "variable", "cls": VariablesCV},
         "dimensions": {"name": "dimension", "cls": DimensionsCV},
-        "global-attributes": {"name": "global-attributes", "cls": GlobalAttrCheck}
+        "global-attributes": {"name": "global-attributes", "cls": GlobalAttributesCV}
     }
 
     def __init__(self, spreadsheets_dir):
@@ -176,12 +178,12 @@ class SpreadsheetHandler(object):
             CVParseInfo(
                 path=static_path("ncas_instruments_worksheet"),
                 cls=InstrumentsCV,
-                facets=["instrument"]
+                facets=["ncas_instrument"]
             ),
             CVParseInfo(
                 path=static_path("community_instruments_worksheet"),
                 cls=InstrumentsCV,
-                facets=["instrument"]
+                facets=["community_instrument"]
             ),
             CVParseInfo(
                 path=static_path("data_products_worksheet"),
@@ -248,9 +250,9 @@ class SpreadsheetHandler(object):
         for dirpath, _dirnames, filenames in os.walk(prods_dir):
             for fname in filenames:
 
-                if "global-attributes" in fname:
-                    print('WARNING: Product specific global attributes not supported yet.')
-                    continue
+                # if "global-attributes" in fname:
+                #     print('WARNING: Product specific global attributes not supported yet.')
+                #     continue
 
                 path = os.path.join(dirpath, fname)
                 match = sheet_regex.search(path)
@@ -282,7 +284,11 @@ class SpreadsheetHandler(object):
 
             for mode in DeploymentModes:
                 dep_m = mode.value
-                filename = "{type}-{dep_m}.tsv".format(type=prefix, dep_m=dep_m)
+                if prefix == 'global-attributes':
+                    filename = "{type}.tsv".format(type=prefix)
+                    print("NOTE: Global attributes are the same for all deployment modes.")
+                else:
+                    filename = "{type}-{dep_m}.tsv".format(type=prefix, dep_m=dep_m)
 
                 yield CVParseInfo(
                     path=os.path.join(common_dir, filename),
