@@ -117,7 +117,24 @@ class GlobalAttrCheck(YamlCheck):
         reader = StripWhitespaceReader(tsv_file, delimiter="\t")
 
         self.regexes = OrderedDict()
+
+        ns = self.namespace
+        cv = {ns: OrderedDict()}
         for row in reader:
+            name_id = row["Name"]
+            if name_id in cv[ns]:
+                print("WARNING: Duplicate global attribute '{}'".format(name_id),
+                      file=sys.stderr)
+                continue
+
+            cv[ns][name_id] = {
+                "global_attribute_id": name_id,
+                "description": row["Description"],
+                "fixed_value": row["Fixed Value"],
+                "compliance_checking_rules": row["Compliance checking rules"],
+                "convention_providence": row["Convention Providence"]
+            }
+
             try:
                 attr, regex = GlobalAttrCheck.parse_row(row)
                 self.regexes[attr] = regex
@@ -125,6 +142,8 @@ class GlobalAttrCheck(YamlCheck):
                 pass
             except ValueError as ex:
                 print("WARNING: {}".format(ex), file=sys.stderr)
+
+        self.cv_dict = cv
 
     def get_yaml_checks(self):
         check_name = "checklib.register.nc_file_checks_register.GlobalAttrRegexCheck"

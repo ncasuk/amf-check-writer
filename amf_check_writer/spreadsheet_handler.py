@@ -59,7 +59,7 @@ class SpreadsheetHandler(object):
     VAR_DIM_FILENAME_MAPPING = {
         "variables": {"name": "variable", "cls": VariablesCV},
         "dimensions": {"name": "dimension", "cls": DimensionsCV},
-        "global-attributes": {"name": "global-attributes", "cls": GlobalAttributesCV}
+        "global-attributes": {"name": "global-attributes", "cls": GlobalAttrCheck}
     }
 
     def __init__(self, spreadsheets_dir):
