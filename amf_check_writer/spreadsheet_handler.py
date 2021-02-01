@@ -7,8 +7,7 @@ from collections import namedtuple
 from enum import Enum
 
 from amf_check_writer.cvs import (BaseCV, VariablesCV, ProductsCV, PlatformsCV,
-                                  InstrumentsCV, DimensionsCV, ScientistsCV,
-                                  GlobalAttributesCV)
+                                  InstrumentsCV, DimensionsCV, ScientistsCV)
 from amf_check_writer.yaml_check import (YamlCheck, WrapperYamlCheck,
                                          FileInfoCheck, FileStructureCheck,
                                          GlobalAttrCheck)
