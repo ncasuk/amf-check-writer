@@ -40,7 +40,6 @@ def main():
             os.mkdir(dirname)
 
     args.spreadsheets_dir = os.path.join(args.spreadsheets_dir, 'product-definitions')
-    print(args.spreadsheets_dir)
     sh = SpreadsheetHandler(args.spreadsheets_dir)
     sh.write_cvs(args.output_dir, write_pyessv=True,
                  pyessv_root=args.pyessv_root)
