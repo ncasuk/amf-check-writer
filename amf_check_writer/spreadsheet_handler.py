@@ -279,11 +279,11 @@ class SpreadsheetHandler(object):
 
             for mode in DeploymentModes:
                 dep_m = mode.value
-                # if prefix == 'global-attributes':
-                #     filename = "{type}.tsv".format(type=prefix)
-                #     print("NOTE: Global attributes are the same for all deployment modes.")
-                # else:
-                filename = "{type}-{dep_m}.tsv".format(type=prefix, dep_m=dep_m)
+                if prefix == 'global-attributes':
+                    filename = "{type}.tsv".format(type=prefix)
+                    print("NOTE: Global attributes are the same for all deployment modes.")
+                else:
+                    filename = "{type}-{dep_m}.tsv".format(type=prefix, dep_m=dep_m)
 
                 yield CVParseInfo(
                     path=os.path.join(common_dir, filename),
