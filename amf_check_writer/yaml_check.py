@@ -10,21 +10,36 @@ from amf_check_writer.exceptions import InvalidRowError
 from amf_check_writer.base_file import AmfFile
 from amf_check_writer.cvs.base import StripWhitespaceReader
 
+class CustomDumper(yaml.SafeDumper):
+    # Inserts blank lines between top-level objects: inspired by https://stackoverflow.com/a/44284819/3786245"
+    # Preserve the mapping key order. See https://stackoverflow.com/a/52621703/1497385"
+
+    def write_line_break(self, data=None):
+        super().write_line_break(data)
+        if len(self.indents) in (1,2):
+            super().write_line_break()
+
+    def represent_dict_preserve_order(self, data):
+        return self.represent_dict(data.items())
+
+CustomDumper.add_representer(OrderedDict, CustomDumper.represent_dict_preserve_order)
 
 class YamlCheck(AmfFile):
     """
     A YAML file that can be used with cc-yaml to run a suite of checks
     """
-    def to_yaml_check(self):
+    def to_yaml_check(self, version):
         """
         Use `get_yaml_checks` to write a YAML check suite for use with cc-yaml
         :return: the YAML document as a string
         """
-        return yaml.dump({
-            "suite_name": "{}_checks".format(self.namespace),
-            "description": "Check '{}' in AMF files".format(" ".join(self.facets)),
-            "checks": list(self.get_yaml_checks())
-        })
+        d = OrderedDict()
+
+        d["suite_name"] = "{}_checks:{}".format(self.namespace,version)
+        d["description"] = "Check '{}' in AMF files".format(" ".join(self.facets))
+        d["checks"] = list(self.get_yaml_checks())
+
+        return yaml.dump(d, Dumper=CustomDumper)
 
     def get_yaml_checks(self):
         """
@@ -102,7 +117,24 @@ class GlobalAttrCheck(YamlCheck):
         reader = StripWhitespaceReader(tsv_file, delimiter="\t")
 
         self.regexes = OrderedDict()
+
+        ns = self.namespace
+        cv = {ns: OrderedDict()}
         for row in reader:
+            name_id = row["Name"]
+            if name_id in cv[ns]:
+                print("WARNING: Duplicate global attribute '{}'".format(name_id),
+                      file=sys.stderr)
+                continue
+
+            cv[ns][name_id] = {
+                "global_attribute_id": name_id,
+                "description": row["Description"],
+                "fixed_value": row["Fixed Value"],
+                "compliance_checking_rules": row["Compliance checking rules"],
+                "convention_providence": row["Convention Providence"]
+            }
+
             try:
                 attr, regex = GlobalAttrCheck.parse_row(row)
                 self.regexes[attr] = regex
@@ -110,6 +142,8 @@ class GlobalAttrCheck(YamlCheck):
                 pass
             except ValueError as ex:
                 print("WARNING: {}".format(ex), file=sys.stderr)
+
+        self.cv_dict = cv
 
     def get_yaml_checks(self):
         check_name = "checklib.register.nc_file_checks_register.GlobalAttrRegexCheck"

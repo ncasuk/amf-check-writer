@@ -14,3 +14,11 @@ class DimensionsSheetNoRowsError(Exception):
     so we defined this exception to safely catch this error and
     ignore.
     """
+    
+class GlobalAttributesSheetNoRowsError(Exception):
+    """
+    The Specific Global Attributes Sheet has no data rows.
+    This is acceptable so we defined this exception to safely
+    catch this error and ignore.
+    """
+

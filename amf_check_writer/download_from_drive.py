@@ -8,6 +8,7 @@ import os
 import sys
 import time
 import argparse
+from pathlib import Path
 
 import httplib2
 from pygdrive3 import service
@@ -100,9 +101,10 @@ class SheetDownloader(object):
     """
 
     def __init__(self, out_dir, secrets_file=None):
-        self.out_dir = os.path.join(out_dir, 'product-definitions')
+        self.out_dir = os.path.join(out_dir, CHOSEN_VERSION,
+                                    'spreadsheets', 'product-definitions')
         if not os.path.isdir(self.out_dir):
-            os.mkdir(self.out_dir)
+            os.makedirs(self.out_dir)
 
         self.secrets_file = secrets_file
 
@@ -147,6 +149,19 @@ class SheetDownloader(object):
         results = self.sheets_api.spreadsheets().values().get(spreadsheetId=sheet_id,
                                                               range=cell_range).execute()
         return results.get("values", [])
+
+    @api_call
+    def save_raw_spreadsheet(self, sheet_id, spreadsheet_file):
+        request = self.drive_api.files().export_media(fileId=sheet_id,
+              mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+        with open(spreadsheet_file, 'wb') as fh:
+            downloader = http.MediaIoBaseDownload(fh, request)
+
+            done = False
+            while done is False:
+                status, done = downloader.next_chunk()
+        
 
     def find_all_spreadsheets(self, callback, root_id=ROOT_FOLDER_ID, folder_name=""):
         """
@@ -231,15 +246,7 @@ class SheetDownloader(object):
         spreadsheet_file = os.path.join(spreadsheet_dir, sheet_name)
         print("[INFO] Saving spreadsheet to: {}...".format(spreadsheet_file))
 
-        request = self.drive_api.files().export_media(fileId=sheet_id,
-              mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-
-        with open(spreadsheet_file, 'wb') as fh:
-            downloader = http.MediaIoBaseDownload(fh, request)
-
-            done = False
-            while done is False:
-                status, done = downloader.next_chunk()
+        self.save_raw_spreadsheet(sheet_id, spreadsheet_file)
 
     def save_spreadsheet_callback(self):
         """

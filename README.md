@@ -120,7 +120,7 @@ Google API dashboard.
 * Return to the dashboard and click 'Credentials' in the sidebar on the left
   (key icon)
 
-* Click 'Create credentials' and select 'OAuth client ID'. Select 'Other' for
+* Click 'Create credentials' and select 'OAuth client ID'. Select 'Desktop app' for
   application type and follow the prompts. Dismiss the popup that appears.
 
 * You should see the newly created credentials in the table. On the right hand

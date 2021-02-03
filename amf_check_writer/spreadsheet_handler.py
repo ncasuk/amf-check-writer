@@ -22,18 +22,19 @@ class DeploymentModes(Enum):
     LAND = "land"
     SEA = "sea"
     AIR = "air"
+    TRAJECTORY = "trajectory"
 
 
 SPREADSHEET_NAMES = {
 #    "products_dir": "product-definitions",
     "common_spreadsheet": "_common",
     "vocabs_spreadsheet": "_vocabularies",
-    "global_attrs_worksheet": "global-attributes",
-    "ncas_instruments_worksheet": "ncas-instrument-name-and-descriptors",
-    "community_instruments_worksheet": "community-instrument-name-and-descriptors",
-    "data_products_worksheet": "data-products",
-    "platforms_worksheet": "platforms",
-    "scientists_worksheet": "creators"
+    "global_attrs_worksheet": "global-attributes.tsv",
+    "ncas_instruments_worksheet": "ncas-instrument-name-and-descriptors.tsv",
+    "community_instruments_worksheet": "community-instrument-name-and-descriptors.tsv",
+    "data_products_worksheet": "data-products.tsv",
+    "platforms_worksheet": "platforms.tsv",
+    "scientists_worksheet": "creators.tsv"
 }
 
 
@@ -57,6 +58,7 @@ class SpreadsheetHandler(object):
     VAR_DIM_FILENAME_MAPPING = {
         "variables": {"name": "variable", "cls": VariablesCV},
         "dimensions": {"name": "dimension", "cls": DimensionsCV},
+        "global-attributes": {"name": "global-attributes", "cls": GlobalAttrCheck}
     }
 
     def __init__(self, spreadsheets_dir):
@@ -71,7 +73,8 @@ class SpreadsheetHandler(object):
         :param pyessv_root:  directory to use as pyessv archive
         """
         cvs = list(self.get_all_cvs())
-        self._write_output_files(cvs, BaseCV.to_json, output_dir, "json")
+        version_number = self._find_version_number(output_dir)
+        self._write_output_files(cvs, BaseCV.to_json, output_dir, "json", version_number)
         if write_pyessv:
             writer = PyessvWriter(pyessv_root=pyessv_root)
             writer.write_cvs(cvs)
@@ -117,6 +120,9 @@ class SpreadsheetHandler(object):
                         product_cvs[prod_name] = []
                     product_cvs[prod_name].append(cv)
 
+        # Find version number of the checks by looking for regex in output_dir
+        version_number = self._find_version_number(output_dir)
+
         # Create a top-level YAML check for each product/deployment-mode
         # combination
         for prod_name, prod_cvs in product_cvs.items():
@@ -127,9 +133,9 @@ class SpreadsheetHandler(object):
                 all_checks.append(WrapperYamlCheck(child_checks, facets))
 
         self._write_output_files(all_checks, YamlCheck.to_yaml_check,
-                                 output_dir, "yml")
+                                 output_dir, "yml", version_number)
 
-    def _write_output_files(self, files, callback, output_dir, ext):
+    def _write_output_files(self, files, callback, output_dir, ext, version):
         """
         Helper method to call a method on a several AmfFile objects and write
         the output to a file
@@ -148,7 +154,7 @@ class SpreadsheetHandler(object):
             outpath = os.path.join(output_dir, fname)
 
             with open(outpath, "w") as out_file:
-                out_file.write(callback(f))
+                out_file.write(callback(f,version))
                 count += 1
    
             print('[INFO] Wrote: {}'.format(outpath))
@@ -165,18 +171,18 @@ class SpreadsheetHandler(object):
         """
         # Static CVs
         def static_path(name):
-            return os.path.join(SPREADSHEET_NAMES["vocabs_spreadsheet"],
+            return os.path.join('tsv',SPREADSHEET_NAMES["vocabs_spreadsheet"],
                                 SPREADSHEET_NAMES[name])
         cv_parse_infos = [
             CVParseInfo(
                 path=static_path("ncas_instruments_worksheet"),
                 cls=InstrumentsCV,
-                facets=["instrument"]
+                facets=["ncas_instrument"]
             ),
             CVParseInfo(
                 path=static_path("community_instruments_worksheet"),
                 cls=InstrumentsCV,
-                facets=["instrument"]
+                facets=["community_instrument"]
             ),
             CVParseInfo(
                 path=static_path("data_products_worksheet"),
@@ -243,10 +249,6 @@ class SpreadsheetHandler(object):
         for dirpath, _dirnames, filenames in os.walk(prods_dir):
             for fname in filenames:
 
-                if "global-attributes" in fname:
-                    print('WARNING: Product specific global attributes not supported yet.')
-                    continue
-                
                 path = os.path.join(dirpath, fname)
                 match = sheet_regex.search(path)
 
@@ -277,7 +279,11 @@ class SpreadsheetHandler(object):
 
             for mode in DeploymentModes:
                 dep_m = mode.value
-                filename = "{type}-{dep_m}.tsv".format(type=prefix, dep_m=dep_m)
+                if prefix == 'global-attributes':
+                    filename = "{type}.tsv".format(type=prefix)
+                    print("NOTE: Global attributes are the same for all deployment modes.")
+                else:
+                    filename = "{type}-{dep_m}.tsv".format(type=prefix, dep_m=dep_m)
 
                 yield CVParseInfo(
                     path=os.path.join(common_dir, filename),
@@ -297,3 +303,15 @@ class SpreadsheetHandler(object):
             print("WARNING: Expected to find file at '{}'".format(path),
                   file=sys.stderr)
         return isfile
+
+    def _find_version_number(self,output_dir):
+
+        """
+        Finds the version number from the tsv_file path for the controlled
+        variable.
+
+        Return: version number (string)
+        """
+        version_regex = re.compile(r"v\d\.\d")
+        match_ver = version_regex.search(output_dir)
+        return match_ver.group()[1:]

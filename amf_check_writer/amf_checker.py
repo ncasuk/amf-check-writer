@@ -99,11 +99,22 @@ def main():
              "you must use 'json_new' instead of 'json' if checking multiple "
              "files"
     )
+    parser.add_argument(
+        "-v", "--version",
+        dest="checks_version_number",
+        help="This should be the version number of the checks you want to "
+             "use. For example, \"2.0\" for v2.0."
+    )
     args = parser.parse_args(sys.argv[1:])
 
     # Check yaml_dir exists
     if not args.yaml_dir or not os.path.isdir(args.yaml_dir):
         raise ValueError("Please include directory of YAML checks as argument: '--yaml-dir'.") 
+
+    # Check for version number
+    if not args.checks_version_number:
+        raise ValueError("Please include the version number of the checks "
+                         "you\'d like to use, eg. \'--version 2.0\'")
 
     files = []
     for fname in args.files:
@@ -145,7 +156,7 @@ def main():
         cc_args = [
             "compliance-checker",
             "--yaml", os.path.join(args.yaml_dir, "AMF_{}.yml".format(yaml_check)),
-            "--test", "{}_checks".format(yaml_check)
+            "--test", "{}_checks:{}".format(yaml_check,args.checks_version_number)
         ]
 
         if args.output_format:
