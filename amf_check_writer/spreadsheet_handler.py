@@ -212,7 +212,7 @@ class SpreadsheetHandler(object):
                 file=sys.stderr
             )
 
-        for path, cls, facets in cv_parse_infos:
+        for count, (path, cls, facets) in enumerate(cv_parse_infos):
             if base_class and base_class not in cls.__bases__:
                 continue
 
@@ -229,8 +229,10 @@ class SpreadsheetHandler(object):
                     # Ignore if there is no data in the Dimensions worksheet
                     pass
                 except CVParseError as ex:
-                    print("WARNING: Failed to parse '{}': {}"
+                    print("[WARNING] Failed to parse '{}': {}"
                           .format(full_path, ex), file=sys.stderr)
+
+        print(f'[INFO] Read input from {count} TSV files')
 
     def _get_per_product_parse_info(self):
         """
@@ -256,7 +258,7 @@ class SpreadsheetHandler(object):
                     # Ignore silently if not products
                     continue
                 elif not match:
-                    print("WARNING: No match for '{}'".format(path))
+                    print("[WARNING] No match for '{}'".format(path))
                     continue
 
                 print('[INFO] Working on: {}'.format(path))
@@ -300,18 +302,18 @@ class SpreadsheetHandler(object):
         """
         isfile = os.path.isfile(path)
         if not isfile:
-            print("WARNING: Expected to find file at '{}'".format(path),
+            print("[WARNING] Expected to find file at '{}'".format(path),
                   file=sys.stderr)
         return isfile
 
-    def _find_version_number(self,output_dir):
+    def _find_version_number(self, s):
 
         """
-        Finds the version number from the tsv_file path for the controlled
-        variable.
+        Finds the version number from the tsv_file path from a path/string.
 
         Return: version number (string)
         """
         version_regex = re.compile(r"v\d\.\d")
-        match_ver = version_regex.search(output_dir)
+        match_ver = version_regex.search(s)
+
         return match_ver.group()[1:]

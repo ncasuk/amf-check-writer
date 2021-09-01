@@ -1,0 +1,29 @@
+---
+google_drive_content:
+  header: "Content from the Google Drive"
+  text:   The initial content is loaded from the google driveo
+          and more stuff and oterh
+          things
+
+          [NEW_PARA]And what about a new paragraph?
+  _common.xlsx:
+    - global-attributes
+    - dimensions-trajectory
+    - variables-trajectory
+    - dimensions-land
+    - variables-land
+    - dimensions-air
+    - variables-air
+    - dimensions-sea
+    - variables-sea
+  _vocabularies.xlsx:
+    - community-instrument-name-and-descriptors
+    - ncas-instrument-name-and-descriptors
+    - data-products
+    - platforms
+    - creators
+    - file-naming
+  per-product:
+    - dimensions-specific 
+    - global-attributes-specific*
+    - variables-specific 
