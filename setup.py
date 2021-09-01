@@ -18,6 +18,7 @@ setup(
             "create-cvs=amf_check_writer.create_cvs:main",
             "create-yaml-checks=amf_check_writer.create_yaml_checks:main",
             "download-from-drive=amf_check_writer.download_from_drive:main",
+            "write-workflow-docs=amf_check_writer.workflow_docs:main"
         ]
     }
 )

@@ -139,7 +139,8 @@ class GlobalAttrCheck(YamlCheck):
                 attr, regex = GlobalAttrCheck.parse_row(row)
                 self.regexes[attr] = regex
             except InvalidRowError:
-                pass
+                print(f"[WARNING]: Invalid row in spreadsheet/TSV ({tsv_file}: {row}",
+                      file=sys.stderr)
             except ValueError as ex:
                 print("WARNING: {}".format(ex), file=sys.stderr)
 
