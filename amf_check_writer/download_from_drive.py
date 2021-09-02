@@ -100,13 +100,15 @@ class SheetDownloader(object):
     spreadsheets
     """
 
-    def __init__(self, out_dir, secrets_file=None):
+    def __init__(self, out_dir, secrets_file=None, regenerate=False):
         self.out_dir = os.path.join(out_dir, CHOSEN_VERSION,
                                     'spreadsheets', 'product-definitions')
+
         if not os.path.isdir(self.out_dir):
             os.makedirs(self.out_dir)
 
         self.secrets_file = secrets_file
+        self.regenerate = regenerate
 
         # Authenticate and get API handles
         drive_credentials = get_credentials("drive", secrets_file)
@@ -240,13 +242,21 @@ class SheetDownloader(object):
 
             cell_range = "'{}'!A1:Z{}".format(name, NROWS_TO_PARSE)
             out_file = os.path.join(tsv_dir, "{}.tsv".format(name))
-            self.write_values_to_tsv(self.get_sheet_values(sheet_id, cell_range), out_file)
+
+            if os.path.isfile(out_file) and not self.regenerate:
+                print(f"[WARNING] Not regenerating TSV...file already exists: {out_file}")
+            else:
+                self.write_values_to_tsv(self.get_sheet_values(sheet_id, cell_range), out_file)
 
         # Now download the raw spreadsheet 
         spreadsheet_file = os.path.join(spreadsheet_dir, sheet_name)
-        print("[INFO] Saving spreadsheet to: {}...".format(spreadsheet_file))
 
-        self.save_raw_spreadsheet(sheet_id, spreadsheet_file)
+        if os.path.isfile(spreadsheet_file) and not self.regenerate:
+            print(f"[WARNING] Download not initiated...file already exists: {spreadsheet_file}")
+            return
+        else:
+            print(f"[INFO] Saving spreadsheet to: {spreadsheet_file}...")
+            self.save_raw_spreadsheet(sheet_id, spreadsheet_file)
 
     def save_spreadsheet_callback(self):
         """
@@ -255,11 +265,6 @@ class SheetDownloader(object):
 
         """
         def callback(name, sheet_id, parent_folder):
-
-#            target_dir = os.path.join(self.out_dir, parent_folder, name)
-#            if not os.path.isdir(target_dir):
-#                os.makedirs(target_dir)
-
             self.download_all_sheets(sheet_id, name)
 
         return callback
@@ -275,8 +280,18 @@ def main():
         help="Client secrets JSON file (see README for instructions on how to "
              "obtain this). Only required for first time use."
     )
+    parser.add_argument(
+        "--regenerate", dest="regenerate", action="store_true",
+        help="Force download and re-generation of files that already exist on "
+             "the file system. Default is to always re-generate files."
+    )
+    parser.add_argument(
+        "--no-regenerate", dest="regenerate", action="store_false"
+    )
+
     args = parser.parse_args(sys.argv[1:])
-    downloader = SheetDownloader(args.output_dir, secrets_file=args.secrets)
+    downloader = SheetDownloader(args.output_dir, secrets_file=args.secrets,
+                                 regenerate=args.regenerate)
     downloader.run()
 
 if __name__ == "__main__":
