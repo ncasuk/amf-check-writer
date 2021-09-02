@@ -139,10 +139,11 @@ class GlobalAttrCheck(YamlCheck):
                 attr, regex = GlobalAttrCheck.parse_row(row)
                 self.regexes[attr] = regex
             except InvalidRowError:
-                print(f"[WARNING]: Invalid row in spreadsheet/TSV ({tsv_file}: {row}",
+                print(f"[WARNING]: Invalid row in spreadsheet/TSV ({tsv_file.name}): {row}",
                       file=sys.stderr)
             except ValueError as ex:
-                print("WARNING: {}".format(ex), file=sys.stderr)
+                print(f"[WARNING]: Cannot parse row in spreadsheet/TSV ({tsv_file.name}): "
+                      f"{row} : Exception: {ex}", file=sys.stderr)
 
         self.cv_dict = cv
 
@@ -189,12 +190,14 @@ class GlobalAttrCheck(YamlCheck):
             "Match: YYYY-MM-DDThh:mm:ss\.\d+": "\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?",
             "Match: YYYY-MM-DDThh:mm:ss\.\d+ _or_ N/A": 
                  "(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?)|" + _NOT_APPLICABLE_RULES,
-            "Exact match: <number> m": r"-?\d+(\.\d+)? m",
+            "Exact match: <number> m": r"-?\d+(\.\d+)? m"
         }
         # Regexes based on a regex in the rule column
         regex_rules = {
             r"String: min (?P<count>\d+) characters?":
-                lambda m: r".{" + str(m.group("count")) + r",}"
+                lambda m: r".{" + str(m.group("count")) + r",}",
+            r"One of:\s+(?P<choices>.+)":
+                lambda m: r"(" + "|".join([i.strip() for i in m.group("choices").split(",")]) + r")"
         }
 
         regex = None
