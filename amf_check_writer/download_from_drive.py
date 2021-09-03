@@ -18,12 +18,9 @@ from apiclient import http
 
 
 from amf_check_writer.credentials import get_credentials
+from amf_check_writer.config import (CURRENT_VERSION, ROOT_FOLDER_ID, 
+                                     ALL_VERSIONS, NROWS_TO_PARSE)
 
-
-# ID of the top level folder in Google Drive
-ROOT_FOLDER_ID = "1TGsJBltDttqs6nsbUwopX5BL_q8AU-5X"
-CHOSEN_VERSION = "v2.0"
-NROWS_TO_PARSE = 999
 
 SPREADSHEET_MIME_TYPES = (
     "application/vnd.google-apps.spreadsheet"
@@ -100,9 +97,9 @@ class SheetDownloader(object):
     spreadsheets
     """
 
-    def __init__(self, out_dir, secrets_file=None, regenerate=False):
-        self.out_dir = os.path.join(out_dir, CHOSEN_VERSION,
-                                    'spreadsheets', 'product-definitions')
+    def __init__(self, out_dir, version, secrets_file=None, regenerate=False):
+        self.version = version
+        self.out_dir = os.path.join(out_dir, self.version)
 
         if not os.path.isdir(self.out_dir):
             os.makedirs(self.out_dir)
@@ -172,24 +169,28 @@ class SheetDownloader(object):
         (spreadsheet name, spreadsheet ID, parent folder name).
         """
         for f in self.get_folder_children(root_id):
+
+            fname = f["name"]
+
             if f["mimeType"] == FOLDER_MIME_TYPE:
-                if f["name"] in FOLDERS_TO_SKIP:
-                    print("[INFO] Skipping folder '{}'".format(f["name"]))
+                if fname in FOLDERS_TO_SKIP:
+                    print(f"[INFO] Skipping folder '{fname}'")
                     continue
                 
-                if f["name"] in CHOSEN_VERSION:
-                    print("[INFO] Found and using '{}'".format(f["name"]))
+                if fname in self.version:
+                    print(f"[INFO] Found and using '{fname}'")
                 else:
-                    print("[INFO] Skipping folder with '{}' as we want '{}'".format(f["name"],CHOSEN_VERSION))
+                    print(f"[INFO] Skipping folder with '{fname}' as we want '{self.version}'")
                     continue
 
-                new_folder = os.path.join(folder_name, f["name"])
+                new_folder = os.path.join(folder_name, fname)
+
                 # Make the recursive call if we have found a sub-folder
                 self.find_all_spreadsheets(callback, root_id=f["id"], folder_name=new_folder)
 
             elif f["mimeType"] in SPREADSHEET_MIME_TYPES:
                 # Process the spreadsheet
-                callback(f["name"], f["id"], folder_name)
+                callback(fname, f["id"], folder_name)
 
     def write_values_to_tsv(self, values, out_file):
         """
@@ -198,7 +199,7 @@ class SheetDownloader(object):
         """
         with open(out_file, "w") as f:
             for row in values:
-                f.write("\t".join([cell.strip().replace("\n", "|")
+                f.write("\t".join([cell.strip().replace("\n", "|").replace("\r", "")
                                    for cell in row]))
                 f.write(os.linesep)
 
@@ -225,8 +226,9 @@ class SheetDownloader(object):
         if sheet_name_no_xlsx + '.xlsx' != sheet_name:
             raise Exception('Sheet does not have expected name with ".xlsx" extension: {}'.format(sheet_name))
 
-        tsv_dir = os.path.join(self.out_dir, 'tsv', sheet_name_no_xlsx)
-        spreadsheet_dir = os.path.join(self.out_dir, 'spreadsheet')
+        prod_def_dir = os.path.join(self.out_dir, 'product-definitions')
+        tsv_dir = os.path.join(prod_def_dir, 'tsv', sheet_name_no_xlsx)
+        spreadsheet_dir = os.path.join(prod_def_dir, 'spreadsheet')
         
         for sdir in (tsv_dir, spreadsheet_dir):
             if not os.path.isdir(sdir):
@@ -275,11 +277,18 @@ def main():
         "output_dir",
         help="Directory to write spreadsheets to"
     )
+
     parser.add_argument(
         "-s", "--secrets",
         help="Client secrets JSON file (see README for instructions on how to "
              "obtain this). Only required for first time use."
     )
+
+    parser.add_argument(
+        "-v", "--version", required=True, choices=ALL_VERSIONS,
+        help=f"Version of the spreadsheets to use (e.g. '{CURRENT_VERSION}')."
+    )
+
     parser.add_argument(
         "--regenerate", dest="regenerate", action="store_true",
         help="Force download and re-generation of files that already exist on "
@@ -290,7 +299,7 @@ def main():
     )
 
     args = parser.parse_args(sys.argv[1:])
-    downloader = SheetDownloader(args.output_dir, secrets_file=args.secrets,
+    downloader = SheetDownloader(args.output_dir, args.version, secrets_file=args.secrets,
                                  regenerate=args.regenerate)
     downloader.run()
 

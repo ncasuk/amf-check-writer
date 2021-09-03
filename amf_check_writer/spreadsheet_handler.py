@@ -61,20 +61,20 @@ class SpreadsheetHandler(object):
         "global-attributes": {"name": "global-attributes", "cls": GlobalAttrCheck}
     }
 
-    def __init__(self, spreadsheets_dir):
-        self.path = spreadsheets_dir
+    def __init__(self, version_dir):
+        self.path = version_dir
 
-    def write_cvs(self, output_dir, write_pyessv=False, pyessv_root=None):
+    def write_cvs(self, output_dir, write_pyessv=True, pyessv_root=None):
         """
         Write CVs as JSON files
         :param output_dir:   directory in which to write output JSON files
-        :param write_pyessv: boolean indicating whether to write CVs to pyessv
-                             archive
+        :param write_pyessv: boolean indicating whether to write CVs to pyessv archive
         :param pyessv_root:  directory to use as pyessv archive
         """
         cvs = list(self.get_all_cvs())
         version_number = self._find_version_number(output_dir)
         self._write_output_files(cvs, BaseCV.to_json, output_dir, "json", version_number)
+
         if write_pyessv:
             writer = PyessvWriter(pyessv_root=pyessv_root)
             writer.write_cvs(cvs)
@@ -94,10 +94,12 @@ class SpreadsheetHandler(object):
             FileInfoCheck(["file_info"]),
             FileStructureCheck(["file_structure"]),
         ]
+
         global_attrs_path = os.path.join(
-            self.path, 'tsv', SPREADSHEET_NAMES["common_spreadsheet"],
+            self.path, 'product-definitions/tsv', SPREADSHEET_NAMES["common_spreadsheet"],
             SPREADSHEET_NAMES["global_attrs_worksheet"]
         )
+
         if self._isfile(global_attrs_path):
             with open(global_attrs_path) as tsv_file:
                 global_checks.append(GlobalAttrCheck(tsv_file, ["global_attrs"]))
@@ -107,9 +109,11 @@ class SpreadsheetHandler(object):
         # Group product CVs by name, and common product CVs by deployment mode
         product_cvs = {}
         common_cvs = {}
+
         for cv in cvs:
             if len(cv.facets) > 2 and cv.facets[0] == "product":
                 prod_name = cv.facets[1]
+
                 if prod_name == "common":
                     dep_m = cv.facets[-1]
                     if dep_m not in common_cvs:
@@ -126,6 +130,7 @@ class SpreadsheetHandler(object):
         # Create a top-level YAML check for each product/deployment-mode
         # combination
         for prod_name, prod_cvs in product_cvs.items():
+
             for mode in DeploymentModes:
                 dep_m = mode.value.lower()
                 facets = ["product", prod_name, dep_m]
@@ -157,9 +162,9 @@ class SpreadsheetHandler(object):
                 out_file.write(callback(f,version))
                 count += 1
    
-            print('[INFO] Wrote: {}'.format(outpath))
+            print(f"[INFO] Wrote: {outpath}")
 
-        print("[INFO] {} files written".format(count))
+        print(f"[INFO] {count} files written")
 
     def get_all_cvs(self, base_class=None):
         """
@@ -171,7 +176,7 @@ class SpreadsheetHandler(object):
         """
         # Static CVs
         def static_path(name):
-            return os.path.join('tsv',SPREADSHEET_NAMES["vocabs_spreadsheet"],
+            return os.path.join('product-definitions/tsv', SPREADSHEET_NAMES["vocabs_spreadsheet"],
                                 SPREADSHEET_NAMES[name])
         cv_parse_infos = [
             CVParseInfo(
@@ -206,9 +211,7 @@ class SpreadsheetHandler(object):
         cv_parse_infos += per_product_cvs
 
         if not per_product_cvs:
-            print(
-                "[WARNING] No product variable/dimension spreadsheets found in {}"
-                .format(self.path),
+            print(f"[WARNING] No product variable/dimension spreadsheets found in {self.path}",
                 file=sys.stderr
             )
 
@@ -229,8 +232,8 @@ class SpreadsheetHandler(object):
                     # Ignore if there is no data in the Dimensions worksheet
                     pass
                 except CVParseError as ex:
-                    print("[WARNING] Failed to parse '{}': {}"
-                          .format(full_path, ex), file=sys.stderr)
+                    print(f"[WARNING] Failed to parse '{full_path}': {ex}",
+                          file=sys.stderr)
 
         print(f'[INFO] Read input from {count} TSV files')
 
@@ -241,12 +244,10 @@ class SpreadsheetHandler(object):
         """
         sheet_regex = re.compile(
             r"/tsv/(?P<name>[a-zA-Z0-9-]+)/(?P<type>variables|dimensions|global-attributes)-specific\.tsv$"
-#            r"(?P<name>[a-zA-Z0-9-]+)/(?P=name)\.xlsx/(?P<type>Variables|Dimensions) - Specific.tsv$"
         )
         ignore_match = re.compile(r"/(_common|_vocabularies)/")
 
-        prods_dir = os.path.join(self.path, 'tsv')
-#        prods_dir = os.path.join(self.path, SPREADSHEET_NAMES["products_dir"], 'tsv')
+        prods_dir = os.path.join(self.path, 'product-definitions/tsv')
 
         for dirpath, _dirnames, filenames in os.walk(prods_dir):
             for fname in filenames:
@@ -264,7 +265,9 @@ class SpreadsheetHandler(object):
                 print('[INFO] Working on: {}'.format(path))
                 prod_name = match.group("name")
                 cv_type = match.group("type")
+
                 cls = self.VAR_DIM_FILENAME_MAPPING[cv_type]["cls"]
+
                 facets = ["product", prod_name,
                           self.VAR_DIM_FILENAME_MAPPING[cv_type]["name"]]
                 yield CVParseInfo(os.path.relpath(path, start=self.path), cls,
@@ -275,7 +278,7 @@ class SpreadsheetHandler(object):
         Return iterator of CVParseInfo objects for common variable/dimension
         CVs
         """
-        common_dir = os.path.join(self.path, 'tsv', SPREADSHEET_NAMES["common_spreadsheet"])
+        common_dir = os.path.join(self.path, 'product-definitions/tsv', SPREADSHEET_NAMES["common_spreadsheet"])
 
         for prefix, obj in self.VAR_DIM_FILENAME_MAPPING.items():
 
@@ -313,7 +316,7 @@ class SpreadsheetHandler(object):
 
         Return: version number (string)
         """
-        version_regex = re.compile(r"v\d\.\d")
+        version_regex = re.compile(r"\/v\d+\.\d+")
         match_ver = version_regex.search(s)
-
-        return match_ver.group()[1:]
+        match = match_ver.group()
+        return match[1:]

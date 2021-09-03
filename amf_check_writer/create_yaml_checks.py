@@ -7,29 +7,37 @@ import os
 import argparse
 
 from amf_check_writer.spreadsheet_handler import SpreadsheetHandler
+from amf_check_writer.config import ALL_VERSIONS, CURRENT_VERSION
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+
     parser.add_argument(
-        "spreadsheets_dir",
-        help="Directory containing spreadsheet data, as produced by "
-             "download_from_drive.py"
+        "-s", "--source-dir", required=True,
+        help="Source directory, as downloaded and produced by "
+             "`download-from-drive` script."
     )
+
     parser.add_argument(
-        "output_dir",
-        help="Directory to write output YAML files to"
+        "-v", "--version", required=True, choices=ALL_VERSIONS,
+        help=f"Version of the spreadsheets to use (e.g. '{CURRENT_VERSION}')."
     )
+
     args = parser.parse_args(sys.argv[1:])
 
-    if not os.path.isdir(args.spreadsheets_dir):
-        parser.error("No such directory '{}'".format(args.spreadsheets_dir))
-    if not os.path.isdir(args.output_dir):
-        os.mkdir(args.output_dir)
+    if not os.path.isdir(args.source_dir):
+        parser.error(f"No such directory '{args.source_dir}'")
 
-    args.spreadsheets_dir = os.path.join(args.spreadsheets_dir, 'product-definitions')
-    sh = SpreadsheetHandler(args.spreadsheets_dir)
-    sh.write_yaml(args.output_dir)
+    version_dir = os.path.join(args.source_dir, args.version)
+    sh = SpreadsheetHandler(version_dir)
+
+    checks_dir = os.path.join(version_dir, "checks")
+    if not os.path.isdir(checks_dir): 
+        os.makedirs(checks_dir)
+
+    sh.write_yaml(checks_dir)
+
 
 if __name__ == "__main__":
     main()

@@ -10,6 +10,7 @@ from amf_check_writer.exceptions import InvalidRowError
 from amf_check_writer.base_file import AmfFile
 from amf_check_writer.cvs.base import StripWhitespaceReader
 
+
 class CustomDumper(yaml.SafeDumper):
     # Inserts blank lines between top-level objects: inspired by https://stackoverflow.com/a/44284819/3786245"
     # Preserve the mapping key order. See https://stackoverflow.com/a/52621703/1497385"
@@ -24,6 +25,7 @@ class CustomDumper(yaml.SafeDumper):
 
 CustomDumper.add_representer(OrderedDict, CustomDumper.represent_dict_preserve_order)
 
+
 class YamlCheck(AmfFile):
     """
     A YAML file that can be used with cc-yaml to run a suite of checks
@@ -35,7 +37,7 @@ class YamlCheck(AmfFile):
         """
         d = OrderedDict()
 
-        d["suite_name"] = "{}_checks:{}".format(self.namespace,version)
+        d["suite_name"] = f"{self.namespace}_checks:{version}"
         d["description"] = "Check '{}' in AMF files".format(" ".join(self.facets))
         d["checks"] = list(self.get_yaml_checks())
 
@@ -123,7 +125,7 @@ class GlobalAttrCheck(YamlCheck):
         for row in reader:
             name_id = row["Name"]
             if name_id in cv[ns]:
-                print("WARNING: Duplicate global attribute '{}'".format(name_id),
+                print(f"[WARNING] Duplicate global attribute '{name_id}'",
                       file=sys.stderr)
                 continue
 
@@ -151,7 +153,7 @@ class GlobalAttrCheck(YamlCheck):
         check_name = "checklib.register.nc_file_checks_register.GlobalAttrRegexCheck"
         for attr, regex in self.regexes.items():
             yield {
-                "check_id": "check_{}_global_attribute".format(attr),
+                "check_id": f"check_{attr}_global_attribute",
                 "check_name": check_name,
                 "parameters": {"attribute": attr, "regex": regex}
             }
