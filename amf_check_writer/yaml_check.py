@@ -116,7 +116,7 @@ class GlobalAttrCheck(YamlCheck):
         super(GlobalAttrCheck, self).__init__(facets)
         reader = StripWhitespaceReader(tsv_file, delimiter="\t")
 
-        self.regexes = OrderedDict()
+        self.all_check_details = OrderedDict()
 
         ns = self.namespace
         cv = {ns: OrderedDict()}
@@ -136,8 +136,8 @@ class GlobalAttrCheck(YamlCheck):
             }
 
             try:
-                attr, regex = GlobalAttrCheck.parse_row(row)
-                self.regexes[attr] = regex
+                check_details = GlobalAttrCheck.parse_row(row)
+                self.all_check_details[check_details["attr"]] = check_details
             except InvalidRowError:
                 pass
             except ValueError as ex:
@@ -146,13 +146,33 @@ class GlobalAttrCheck(YamlCheck):
         self.cv_dict = cv
 
     def get_yaml_checks(self):
-        check_name = "checklib.register.nc_file_checks_register.GlobalAttrRegexCheck"
-        for attr, regex in self.regexes.items():
-            yield {
-                "check_id": "check_{}_global_attribute".format(attr),
-                "check_name": check_name,
-                "parameters": {"attribute": attr, "regex": regex}
-            }
+
+        attr_check_types = {
+            "regex": "checklib.register.nc_file_checks_register.GlobalAttrRegexCheck",
+            "vocab": "checklib.register.nc_file_checks_register.GlobalAttrVocabCheck"
+        }
+        
+        #check_name = "checklib.register.nc_file_checks_register.GlobalAttrRegexCheck" # use check type to decide
+        for attr, check_details in self.all_check_details.items():
+            check_name = attr_check_types[check_details["use_attr_check"]]
+            if check_details["use_attr_check"] == "regex":
+                regex = check_details["regex"]
+                yield {
+                    "check_id": "check_{}_global_attribute".format(attr),
+                    "check_name": check_name,
+                    "parameters": {"attribute": attr, "regex": regex}
+                }
+            elif check_details["use_attr_check"] == "vocab":
+                vocab_lookup = check_details["vocab_lookup"]
+                vocabulary_ref = check_details["vocabulary_ref"]
+                yield {
+                    "check_id": "check_{}_global_attribute".format(attr),
+                    "check_name": check_name,
+                    "parameters": {"attribute": attr,
+                                   "vocab_lookup": vocab_lookup,
+                                    "vocabulary_ref": vocabulary_ref
+                                   }
+                }
 
     @classmethod
     def parse_row(cls, row):
@@ -197,6 +217,7 @@ class GlobalAttrCheck(YamlCheck):
         }
 
         regex = None
+        
         try:
             regex = static_rules[rule]
         except KeyError:
@@ -215,9 +236,42 @@ class GlobalAttrCheck(YamlCheck):
                 and rule.lower() in ("exact match", "exact match of text to the left")):
 
                 regex = re.escape(row["Fixed Value"])
+            elif rule.lower() in ("exact match in vocabulary"):
+                use_attr_check = "vocab"
+                vocabulary_ref = "ncas:amf"
+                vocab_options = row["Vocabulary"].split()
+                vocab_lookup = ''
+                for this_option in vocab_options:
+                    this_term, this_lookup = this_option.split(":")
+                    vocab_lookup = vocab_lookup + this_term + ":data:" + this_lookup + " "
+                
+                vocabulary_ref = "ncas:amf"
             else:
                 raise ValueError(
                     "Unrecognised global attribute check rule: {}".format(rule)
                 )
 
-        return attr, regex
+        if regex is not None:
+            use_attr_check = "regex"
+
+        if use_attr_check == "regex":
+            check_details = {
+                "attr": attr,
+                "regex": regex,
+                "use_attr_check": use_attr_check
+            }
+        elif use_attr_check == "vocab":
+            check_details = {
+                "attr": attr,
+                "vocab_lookup": vocab_lookup,
+                "vocabulary_ref": vocabulary_ref,
+                "use_attr_check": use_attr_check
+            }
+        # Need to work out how to do this one
+        elif use_attr_check == "selection":
+            check_details = {
+                "attr": attr
+                
+            }
+
+        return check_details
