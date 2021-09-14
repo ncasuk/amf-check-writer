@@ -42,8 +42,10 @@ class PyessvWriter(object):
         self.term_regex = r"^[a-z0-9\-@\.]*$"
 
     def write_cvs(self, cvs):
-        print("Writing to pyessv archive...")
+        print("[INFO] Writing to pyessv archive...")
         for cv in cvs:
+
+            print(f"[INFO] Working on: {cv.namespace}")
             collection = self._pyessv.create_collection(
                 self.scope_amf,
                 cv.namespace,
@@ -67,3 +69,4 @@ class PyessvWriter(object):
                                          create_date=self.create_date,
                                          **kwargs)
             self._pyessv.archive(self.authority)
+

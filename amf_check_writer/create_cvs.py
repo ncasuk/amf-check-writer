@@ -7,42 +7,41 @@ import sys
 import argparse
 
 from amf_check_writer.spreadsheet_handler import SpreadsheetHandler
+from amf_check_writer.config import ALL_VERSIONS, CURRENT_VERSION
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "spreadsheets_dir",
-        help="Directory containing spreadsheet data, as produced by "
-             "download_from_drive.py"
-    )
-    parser.add_argument(
-        "output_dir",
-        help="Directory to write output JSON CVs to"
+        "-s", "--source-dir", required=True,
+        help="Source directory, as downloaded and produced by "
+             "`download-from-drive` script."
     )
 
-    # Note: default dir is not actually set in this code -- if not given
-    # just use pyessv's default. Will need to update the help text if this
-    # ever changes...
     parser.add_argument(
-        "--pyessv-dir",
-        default=None,
-        dest="pyessv_root",
-        help="Directory to write pyessv CVs to [default: ~/.esdoc/pyessv-archive/]"
+        "-v", "--version", required=True, choices=ALL_VERSIONS,
+        help=f"Version of the spreadsheets to use (e.g. '{CURRENT_VERSION}')."
     )
 
     args = parser.parse_args(sys.argv[1:])
 
-    if not os.path.isdir(args.spreadsheets_dir):
-        parser.error("No such directory '{}'".format(args.spreadsheets_dir))
-    for dirname in (args.output_dir, args.pyessv_root):
-        if dirname and not os.path.isdir(dirname):
-            os.mkdir(dirname)
+    if not os.path.isdir(args.source_dir):
+        parser.error(f"No such directory '{args.source_dir}'")
 
-    args.spreadsheets_dir = os.path.join(args.spreadsheets_dir, 'product-definitions')
-    sh = SpreadsheetHandler(args.spreadsheets_dir)
-    sh.write_cvs(args.output_dir, write_pyessv=True,
-                 pyessv_root=args.pyessv_root)
+    version_dir = os.path.join(args.source_dir, args.version)
+    sh = SpreadsheetHandler(version_dir)
+
+    cvs_dir = os.path.join(version_dir, "AMF_CVs")
+    pyessv_dir = os.path.join(version_dir, "pyessv-vocabs")
+
+    for dr in (cvs_dir, pyessv_dir):
+        if not os.path.isdir(dr):
+            os.makedirs(dr)
+
+    sh.write_cvs(cvs_dir, write_pyessv=True,
+                 pyessv_root=pyessv_dir)
+
+
 
 if __name__ == "__main__":
     main()

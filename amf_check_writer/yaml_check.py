@@ -10,6 +10,7 @@ from amf_check_writer.exceptions import InvalidRowError
 from amf_check_writer.base_file import AmfFile
 from amf_check_writer.cvs.base import StripWhitespaceReader
 
+
 class CustomDumper(yaml.SafeDumper):
     # Inserts blank lines between top-level objects: inspired by https://stackoverflow.com/a/44284819/3786245"
     # Preserve the mapping key order. See https://stackoverflow.com/a/52621703/1497385"
@@ -24,6 +25,7 @@ class CustomDumper(yaml.SafeDumper):
 
 CustomDumper.add_representer(OrderedDict, CustomDumper.represent_dict_preserve_order)
 
+
 class YamlCheck(AmfFile):
     """
     A YAML file that can be used with cc-yaml to run a suite of checks
@@ -35,7 +37,7 @@ class YamlCheck(AmfFile):
         """
         d = OrderedDict()
 
-        d["suite_name"] = "{}_checks:{}".format(self.namespace,version)
+        d["suite_name"] = f"{self.namespace}_checks:{version}"
         d["description"] = "Check '{}' in AMF files".format(" ".join(self.facets))
         d["checks"] = list(self.get_yaml_checks())
 
@@ -123,7 +125,7 @@ class GlobalAttrCheck(YamlCheck):
         for row in reader:
             name_id = row["Name"]
             if name_id in cv[ns]:
-                print("WARNING: Duplicate global attribute '{}'".format(name_id),
+                print(f"[WARNING] Duplicate global attribute '{name_id}'",
                       file=sys.stderr)
                 continue
 
@@ -154,9 +156,9 @@ class GlobalAttrCheck(YamlCheck):
             "vocab": "checklib.register.nc_file_checks_register.GlobalAttrVocabCheck"
         }
         
-        #check_name = "checklib.register.nc_file_checks_register.GlobalAttrRegexCheck" # use check type to decide
         for attr, check_details in self.all_check_details.items():
             check_name = attr_check_types[check_details["use_attr_check"]]
+
             if check_details["use_attr_check"] == "regex":
                 regex = check_details["regex"]
                 yield {
