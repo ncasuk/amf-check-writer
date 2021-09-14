@@ -15,7 +15,7 @@ class InstrumentsCV(BaseCV):
             instr_id = row["New Instrument Name"]
 
             if instr_id in cv[ns]:
-                print(f"[WARNING] Duplicate instrument name '{insr_id}'", file=sys.stderr)
+                print(f"[WARNING] Duplicate instrument name '{instr_id}'", file=sys.stderr)
                 continue
 
             prev_ids = row["Old Instrument Name"] or []
