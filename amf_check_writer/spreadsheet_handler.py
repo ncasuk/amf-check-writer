@@ -220,6 +220,7 @@ class SpreadsheetHandler(object):
                 continue
 
             full_path = os.path.join(self.path, path)
+
             if not self._isfile(full_path):
                 continue
 
@@ -278,17 +279,17 @@ class SpreadsheetHandler(object):
         Return iterator of CVParseInfo objects for common variable/dimension
         CVs
         """
-        common_dir = os.path.join(self.path, 'product-definitions/tsv', SPREADSHEET_NAMES["common_spreadsheet"])
+        common_dir = os.path.join('product-definitions/tsv', SPREADSHEET_NAMES["common_spreadsheet"])
 
         for prefix, obj in self.VAR_DIM_FILENAME_MAPPING.items():
 
             for mode in DeploymentModes:
                 dep_m = mode.value
                 if prefix == 'global-attributes':
-                    filename = "{type}.tsv".format(type=prefix)
+                    filename = f"{prefix}.tsv"
                     print("NOTE: Global attributes are the same for all deployment modes.")
                 else:
-                    filename = "{type}-{dep_m}.tsv".format(type=prefix, dep_m=dep_m)
+                    filename = f"{prefix}-{dep_m}.tsv"
 
                 yield CVParseInfo(
                     path=os.path.join(common_dir, filename),
@@ -305,8 +306,8 @@ class SpreadsheetHandler(object):
         """
         isfile = os.path.isfile(path)
         if not isfile:
-            print("[WARNING] Expected to find file at '{}'".format(path),
-                  file=sys.stderr)
+            print(f"[WARNING] Expected to find file at '{path}'", file=sys.stderr)
+
         return isfile
 
     def _find_version_number(self, s):
