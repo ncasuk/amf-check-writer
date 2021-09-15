@@ -47,25 +47,56 @@ pip install git+https://github.com/ncasuk/amf-check-writer \
 
 ## Quickstart
 
-```bash
-# Download spreadsheets. See 'authentication' section below for first time usage
-download-from-drive /tmp/spreadsheets
+The simplified workflow to create the checks and vocabs is:
 
-# Create controlled vocabulary files from spreadsheets. For first time usage
-# you may need to create the pyessv archive directory:
-# mkdir -p ~/.esdoc/pyessv-archive
-create-cvs /tmp/spreadsheets /tmp/cvs
+1. download
+2. make checks
+3. make CVs
 
-# Create YAML checks from spreadsheets
-create-yaml-checks /tmp/spreadsheets /tmp/yaml
+Define a temporary output directory and create it to write the checks/vocabs to:
 
-# Run a check; e.g:
-compliance-checker --yaml /tmp/yaml/AMF_product_radiation_land.yml \
-                   --test product_radiation_land_checks \
-                   <dataset>
+```
+export DATA_DIR=$PWD/check-data
+mkdir -p $DATA_DIR
+```
 
-# or using amf-checker wrapper script:
-amf-checker <dataset>
+Set the version of the checks/vocabs to use:
+
+```
+VERSION=v2.0
+```
+
+NOTE: Before downloading the spreadsheets the first time, see the 'authentication' 
+section below.
+
+Download the content of the Google spreadsheet vocabularies/rules into local files:
+
+```
+download-from-drive -v $VERSION --regenerate --secrets client-secret.json $DATA_DIR
+```
+
+Run a script to create the YAML representation of the checks:
+
+```
+create-yaml-checks -s $DATA_DIR -v $VERSION
+```
+
+Run a script to create the Controlled Vocabularies (in JSON and PYESSV formats):
+
+```
+create-cvs -s $DATA_DIR -v $VERSION
+```
+
+Run an example check (maybe having downloaded the training data):
+
+```
+# Set the PYESSV DIRECTORY TO USE:
+export PYESSV_ARCHIVE_HOME=$DATA_DIR/$VERSION/pyessv-vocabs
+
+# Run the checker on some test data
+TEST_FILE=../NCAS-Data-Project-Training-Data/Data/ncas-anemometer-1_ral_29001225_mean-winds_v0.1.nc
+
+amf-checker --yaml-dir $DATA_DIR/$VERSION/checks $TEST_FILE --version $VERSION
 ```
 
 ## Scripts
