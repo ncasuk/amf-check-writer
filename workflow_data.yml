@@ -3,7 +3,9 @@
 google_drive_content:
   header: "Content from the Google Drive"
   text:   The initial content is loaded from the versioned 
-          spreadsheets held on the AMOF Google Drive.
+          spreadsheets held on the AMOF Google Drive. The downloaded
+          versions are published in the  
+          http://github.com/ncasuk/AMF_CVs repository.
   _common.xlsx:
     - global-attributes
     - dimensions-trajectory
@@ -29,7 +31,9 @@ google_drive_content:
 yaml_checks:
   header: "YAML checks"
   text:   The YAML checks are generated from the CSV version of the 
-          worksheets saved from the Google Drive spreadsheets.
+          worksheets saved from the Google Drive spreadsheets. These 
+          are published in the  
+          http://github.com/ncasuk/amf-compliance-checks repository.
   common:
     - AMF_product_common_dimension_air.yml
     - AMF_product_common_dimension_land.yml
@@ -55,13 +59,13 @@ yaml_checks:
     - AMF_product_{product}_variable.yml
     - AMF_product_{product}_global-attributes.yml*
 
-controlled-vocabularies:
-  header: "Controlled vocabularies"
+json-cvs:
+  header: "Controlled vocabularies (in JSON format)"
   text:   A set of controlled vocabularies are generated from the  
-          spreadsheet data. These are written as JSON files and in 
-          PYESSV format. The latter is used in by the 
-          `compliance-check-lib` library when running the checks. 
-  json-common:
+          spreadsheet data. These are written as JSON files and are
+          published in the  
+          https://github.com/ncasuk/AMF_CVs repository.
+  common:
     - AMF_ncas_instrument.json
     - AMF_community_instrument.json
     - AMF_product.json
@@ -79,9 +83,38 @@ controlled-vocabularies:
     - AMF_product_common_global-attributes_sea.json
     - AMF_product_common_global-attributes_air.json
     - AMF_product_common_global-attributes_trajectory.json
-  json-per-product:
+  per-product:
     - AMF_product_{product}_variable.json
     - AMF_product_{product}_dimension.json*
     - AMF_product_{product}_global-attributes.json*
-  pyessv:
-    - noone
+pyessv-cvs:
+  header: "Controlled vocabularies (in PYESSV format)"
+  text:   A set of controlled vocabularies are generated from the
+          spreadsheet data. These are written as PYESSV files and are
+          published in the https://github.com/ncasuk/AMF_CVs repository.
+
+          [NEW_PARA]These are used by the 
+          https://github.com/cedadev/compliance-check-lib library when 
+          running checks.
+  common:
+    - community-instrument
+    - ncas-instrument
+    - platform
+    - scientist
+    - product-common-dimension-air
+    - product-common-dimension-land
+    - product-common-dimension-sea
+    - product-common-dimension-trajectory
+    - product-common-global-attributes-air
+    - product-common-global-attributes-land
+    - product-common-global-attributes-sea
+    - product-common-global-attributes-trajectory
+    - product-common-variable-air
+    - product-common-variable-land
+    - product-common-variable-sea
+    - product-common-variable-trajectory
+  per-product:
+    - product-{product}-dimension
+    - product-{product}-global-attributes
+    - product-{product}-variable
+
