@@ -55,7 +55,33 @@ yaml_checks:
     - AMF_product_{product}_variable.yml
     - AMF_product_{product}_global-attributes.yml*
 
-third:
-  header: "oo"
-  text:   sdfsdf
-  
+controlled-vocabularies:
+  header: "Controlled vocabularies"
+  text:   A set of controlled vocabularies are generated from the  
+          spreadsheet data. These are written as JSON files and in 
+          PYESSV format. The latter is used in by the 
+          `compliance-check-lib` library when running the checks. 
+  json-common:
+    - AMF_ncas_instrument.json
+    - AMF_community_instrument.json
+    - AMF_product.json
+    - AMF_platform.json
+    - AMF_scientist.json
+    - AMF_product_common_variable_land.json
+    - AMF_product_common_variable_sea.json
+    - AMF_product_common_variable_air.json
+    - AMF_product_common_variable_trajectory.json
+    - AMF_product_common_dimension_land.json
+    - AMF_product_common_dimension_sea.json
+    - AMF_product_common_dimension_air.json
+    - AMF_product_common_dimension_trajectory.json
+    - AMF_product_common_global-attributes_land.json
+    - AMF_product_common_global-attributes_sea.json
+    - AMF_product_common_global-attributes_air.json
+    - AMF_product_common_global-attributes_trajectory.json
+  json-per-product:
+    - AMF_product_{product}_variable.json
+    - AMF_product_{product}_dimension.json*
+    - AMF_product_{product}_global-attributes.json*
+  pyessv:
+    - noone
