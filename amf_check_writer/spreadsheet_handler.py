@@ -11,8 +11,13 @@ from amf_check_writer.cvs import (BaseCV, VariablesCV, ProductsCV, PlatformsCV,
 from amf_check_writer.yaml_check import (YamlCheck, WrapperYamlCheck,
                                          FileInfoCheck, FileStructureCheck,
                                          GlobalAttrCheck)
+from amf_check_writer.workflow_docs import read_workflow_data
 from amf_check_writer.pyessv_writer import PyessvWriter
 from amf_check_writer.exceptions import CVParseError, DimensionsSheetNoRowsError
+
+
+# Load information about which spreadsheets/worksheets are expected
+workflow_data = {k: v for k,v in read_workflow_data()["yaml_checks"].items()}
 
 
 class DeploymentModes(Enum):
@@ -26,7 +31,6 @@ class DeploymentModes(Enum):
 
 
 SPREADSHEET_NAMES = {
-#    "products_dir": "product-definitions",
     "common_spreadsheet": "_common",
     "vocabs_spreadsheet": "_vocabularies",
     "global_attrs_worksheet": "global-attributes.tsv",
@@ -129,13 +133,42 @@ class SpreadsheetHandler(object):
 
         # Create a top-level YAML check for each product/deployment-mode
         # combination
+        product_names = set()
+
         for prod_name, prod_cvs in product_cvs.items():
+            product_names.add(prod_name)
 
             for mode in DeploymentModes:
                 dep_m = mode.value.lower()
                 facets = ["product", prod_name, dep_m]
                 child_checks = global_checks + prod_cvs + common_cvs.get(dep_m, [])
                 all_checks.append(WrapperYamlCheck(child_checks, facets))
+
+        # Check that the required checks were created
+        all_check_files = {check.get_filename("yml") for check in all_checks}
+
+        expected_product_checks = {check for check in workflow_data["common"]}
+        optional_product_checks = set()
+
+        product_check_templates = [tmpl for tmpl in workflow_data["per-product"]
+                                   if "*" not in tmpl]
+        optional_check_templates = [tmpl for tmpl in workflow_data["per-product"]
+                                    if "*" in tmpl]
+
+        for product_name in product_names:
+            for tmpl in product_check_templates:
+                expected_product_checks.add(tmpl.format(product=product_name))         
+
+            for tmpl in optional_check_templates:
+                optional_product_checks.add(tmpl.format(product=product_name).replace("*", "")) 
+
+        if not all_check_files.issubset(expected_product_checks):
+            import pdb ;pdb.set_trace()
+            diff = all_check_files.difference(expected_product_checks)
+
+            if not diff.issubset(optional_product_checks): 
+                raise ValueError(f"[ERROR] The following expected checks were not created: "
+                                 f"{diff}.")
 
         self._write_output_files(all_checks, YamlCheck.to_yaml_check,
                                  output_dir, "yml", version_number)
