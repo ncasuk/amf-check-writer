@@ -11,8 +11,13 @@ from amf_check_writer.cvs import (BaseCV, VariablesCV, ProductsCV, PlatformsCV,
 from amf_check_writer.yaml_check import (YamlCheck, WrapperYamlCheck,
                                          FileInfoCheck, FileStructureCheck,
                                          GlobalAttrCheck)
+from amf_check_writer.workflow_docs import read_workflow_data
 from amf_check_writer.pyessv_writer import PyessvWriter
 from amf_check_writer.exceptions import CVParseError, DimensionsSheetNoRowsError
+
+
+# Load information about which spreadsheets/worksheets are expected
+workflow_data = {k: v for k,v in read_workflow_data().items()}
 
 
 class DeploymentModes(Enum):
@@ -26,7 +31,6 @@ class DeploymentModes(Enum):
 
 
 SPREADSHEET_NAMES = {
-#    "products_dir": "product-definitions",
     "common_spreadsheet": "_common",
     "vocabs_spreadsheet": "_vocabularies",
     "global_attrs_worksheet": "global-attributes.tsv",
@@ -75,9 +79,47 @@ class SpreadsheetHandler(object):
         version_number = self._find_version_number(output_dir)
         self._write_output_files(cvs, BaseCV.to_json, output_dir, "json", version_number)
 
+        # Check that correct CVs were written
+        json_files = {cv.get_filename("json") for cv in cvs}
+
+        cv_wf_data = workflow_data["controlled-vocabularies"]
+        expected_common_files = {json for json in cv_wf_data["json-common"]}
+        per_product_templates = cv_wf_data["json-per-product"]
+        optional_product_files = set()
+
+        for product_name in self.product_names:
+            for tmpl in per_product_templates:
+
+                json_file = tmpl.format(product=product_name)
+                if "*" not in json_file:
+                    expected_common_files.add(json_file)
+                else:
+                    optional_product_files.add(json_file.replace("*", ""))
+
+        if not expected_common_files.issubset(json_files):
+            diff = expected_common_files.difference(json_files)
+            raise ValueError(f"[ERROR] The following expected JSON controlled "
+                             f"vocabulary JSON files were not created: {diff}.")
+
+        product_ga_and_dim_files = {json for json in json_files 
+            if json.startswith("AMF_product_") and "common" not in json and
+               ("dimension" in json or "global-attributes" in json)}
+
+        if not product_ga_and_dim_files.issubset(optional_product_files):
+            diff = product_ga_and_dim_files.difference(optional_product_files)
+            raise ValueError(f"[ERROR] The following expected JSON controlled "
+                             f"vocabulary JSON files were not created: {diff}.")
+
+        # Write as PYESSV format if required
         if write_pyessv:
             writer = PyessvWriter(pyessv_root=pyessv_root)
             writer.write_cvs(cvs)
+
+            # Check the pyessv files were written correctly
+            if len(writer._written) != len(cvs):
+                diff = set(writer._written).difference({cv.get_identifier() for cv in cvs})
+                raise ValueError(f"[ERROR] The following expected PYESSV controlled "
+                                 f"vocabulary JSON files were not created: {diff}.")
 
     def write_yaml(self, output_dir):
         """
@@ -129,13 +171,42 @@ class SpreadsheetHandler(object):
 
         # Create a top-level YAML check for each product/deployment-mode
         # combination
+        product_names = set()
+
         for prod_name, prod_cvs in product_cvs.items():
+            product_names.add(prod_name)
 
             for mode in DeploymentModes:
                 dep_m = mode.value.lower()
                 facets = ["product", prod_name, dep_m]
                 child_checks = global_checks + prod_cvs + common_cvs.get(dep_m, [])
                 all_checks.append(WrapperYamlCheck(child_checks, facets))
+
+        # Check that the required checks were created
+        all_check_files = {check.get_filename("yml") for check in all_checks}
+
+        yaml_checks_wf_data = workflow_data["yaml_checks"]
+        expected_product_checks = {check for check in yaml_checks_wf_data["common"]}
+        optional_product_checks = set()
+
+        product_check_templates = [tmpl for tmpl in yaml_checks_wf_data["per-product"]
+                                   if "*" not in tmpl]
+        optional_check_templates = [tmpl for tmpl in yaml_checks_wf_data["per-product"]
+                                    if "*" in tmpl]
+
+        for product_name in product_names:
+            for tmpl in product_check_templates:
+                expected_product_checks.add(tmpl.format(product=product_name))         
+
+            for tmpl in optional_check_templates:
+                optional_product_checks.add(tmpl.format(product=product_name).replace("*", "")) 
+
+        if not all_check_files.issubset(expected_product_checks):
+            diff = all_check_files.difference(expected_product_checks)
+
+            if not diff.issubset(optional_product_checks): 
+                raise ValueError(f"[ERROR] The following expected checks were not created: "
+                                 f"{diff}.")
 
         self._write_output_files(all_checks, YamlCheck.to_yaml_check,
                                  output_dir, "yml", version_number)
@@ -243,6 +314,9 @@ class SpreadsheetHandler(object):
         Return iterator of CVParseInfo objects for product variable/dimension
         CVs
         """
+        # Record products in an instance variable (for use during integrity-checking)
+        self.product_names = set()
+
         sheet_regex = re.compile(
             r"/tsv/(?P<name>[a-zA-Z0-9-]+)/(?P<type>variables|dimensions|global-attributes)-specific\.tsv$"
         )
@@ -265,6 +339,8 @@ class SpreadsheetHandler(object):
 
                 print('[INFO] Working on: {}'.format(path))
                 prod_name = match.group("name")
+                self.product_names.add(prod_name)
+
                 cv_type = match.group("type")
 
                 cls = self.VAR_DIM_FILENAME_MAPPING[cv_type]["cls"]

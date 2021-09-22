@@ -5,6 +5,8 @@ from datetime import datetime
 class PyessvWriter(object):
 
     def __init__(self, pyessv_root=None):
+        self._written = []
+
         if pyessv_root:
             os.environ["PYESSV_ARCHIVE_HOME"] = pyessv_root
 
@@ -70,3 +72,4 @@ class PyessvWriter(object):
                                          **kwargs)
             self._pyessv.archive(self.authority)
 
+            self._written.append(cv)

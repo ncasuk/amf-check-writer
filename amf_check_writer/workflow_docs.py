@@ -9,7 +9,8 @@ Writes some documentation (Markdown) about the workflow.
 import os
 import yaml
 
-INPUT_DATA = 'amf-check-writer/workflow_data.yml'
+dn = os.path.dirname
+INPUT_DATA = os.path.join(dn(dn(__file__)), "workflow_data.yml")
 OUTPUT_DIR = '.'
 
 
@@ -33,6 +34,7 @@ def _filter_dict(dct):
         del dct[ignore]
 
     return dct
+
 
 def fmt_table(dct):
     # Remove ignore fields from dict
@@ -61,11 +63,13 @@ def fmt_section(dct):
 
 
 def format_content(content):
-    gdrive_content = content["google_drive_content"]
+    gdrive_content = content
 
     # Build the markdown
     md = f"# Workflow diagram for AMF Check Writer: Checks and Vocabularies\n\n"
-    md += fmt_section(gdrive_content)
+
+    for key, value in content.items():
+        md += fmt_section(value)
 
     return md
 

@@ -18,8 +18,9 @@ from apiclient import http
 
 
 from amf_check_writer.credentials import get_credentials
+from amf_check_writer.workflow_docs import read_workflow_data
 from amf_check_writer.config import (CURRENT_VERSION, ROOT_FOLDER_ID, 
-                                     ALL_VERSIONS, NROWS_TO_PARSE)
+           PRODUCT_COUNT_MINIMUM, ALL_VERSIONS, NROWS_TO_PARSE)
 
 
 SPREADSHEET_MIME_TYPES = (
@@ -34,31 +35,15 @@ FOLDERS_TO_SKIP = (
     "Archive_1"
 )
 
-ALLOWED_WORKSHEET_NAMES = (
-    "creators",
-    "data-products",
-    "dimensions-air",
-    "dimensions-land",
-    "dimensions-sea",
-    "dimensions-specific",
-    "dimensions-trajectory",
-    "file-naming",
-    "global-attributes-specific",
-    "global-attributes",
-    "ncas-instrument-name-and-descriptors",
-    "community-instrument-name-and-descriptors",
-    "platforms",
-    "variables-air",
-    "variables-land",
-    "variables-sea",
-    "variables-specific",
-    "variables-trajectory",
-)
-AWN = ALLOWED_WORKSHEET_NAMES
-
-
-
 API_CALL_TIMES = []
+
+# Load information about which spreadsheets/worksheets are expected
+workflow_data = {k: v for k,v in read_workflow_data()['google_drive_content'].items()}
+ALLOWED_WORKSHEET_NAMES = {
+    worksheet.strip("*") for section in ["_common.xlsx", "_vocabularies.xlsx", "per-product"]
+    for worksheet in workflow_data[section]
+}
+
 
 
 def api_call(func):
@@ -168,9 +153,12 @@ class SheetDownloader(object):
         on each spreadsheet found. `callback` is called with args
         (spreadsheet name, spreadsheet ID, parent folder name).
         """
+        fnames = []
+
         for f in self.get_folder_children(root_id):
 
             fname = f["name"]
+            fnames.append(fname)
 
             if f["mimeType"] == FOLDER_MIME_TYPE:
                 if fname in FOLDERS_TO_SKIP:
@@ -191,6 +179,19 @@ class SheetDownloader(object):
             elif f["mimeType"] in SPREADSHEET_MIME_TYPES:
                 # Process the spreadsheet
                 callback(fname, f["id"], folder_name)
+
+        # Check valid content was found
+        if len([item for item in fnames if item.endswith(".xlsx")]) > 5:
+            expected_xlsx = {xlsx for xlsx in workflow_data if xlsx.endswith(".xlsx")}
+            if not expected_xlsx.issubset(set(fnames)):
+                diff = expected_xlsx.difference(fnames)
+                raise ValueError(f"[ERROR] The following expected spreadsheets were not found on "
+                                 f"Google Drive: {diff}")
+
+            if len(fnames) < PRODUCT_COUNT_MINIMUM:
+                raise Exception(f"[ERROR] The number of product spreadsheets found is less than "
+                                f"the minimum expected: {len(fnames)} < {PRODUCT_COUNT_MINIMUM}."
+                                f" Please investigate.")
 
     def write_values_to_tsv(self, values, out_file):
         """
@@ -224,7 +225,7 @@ class SheetDownloader(object):
         
         # Validate sheet name
         if sheet_name_no_xlsx + '.xlsx' != sheet_name:
-            raise Exception('Sheet does not have expected name with ".xlsx" extension: {}'.format(sheet_name))
+            raise Exception(f"[ERROR] Sheet does not have expected name with '.xlsx' extension: {sheet_name}")
 
         prod_def_dir = os.path.join(self.out_dir, 'product-definitions')
         tsv_dir = os.path.join(prod_def_dir, 'tsv', sheet_name_no_xlsx)
@@ -235,11 +236,14 @@ class SheetDownloader(object):
                 os.makedirs(sdir)
 
         print('[INFO] Saving TSV files to: {}...'.format(tsv_dir))
+        worksheets = set()
+
         for sheet in results["sheets"]:
             name = sheet["properties"]["title"]
+            worksheets.add(name)
 
             # Check worksheet name is valid
-            if name not in AWN:
+            if name not in ALLOWED_WORKSHEET_NAMES:
                 print('[ERROR] Worksheet name not recognised: {}'.format(name))
 
             cell_range = "'{}'!A1:Z{}".format(name, NROWS_TO_PARSE)
@@ -250,6 +254,23 @@ class SheetDownloader(object):
             else:
                 self.write_values_to_tsv(self.get_sheet_values(sheet_id, cell_range), out_file)
 
+        # Check the expected worksheet files were processed
+        # For general (relating to all products) spreadsheets
+        if sheet_name.startswith("_"):
+            if not set(workflow_data[sheet_name]) == worksheets:
+                raise Exception(f"[ERROR] Could not find/process all expected worksheets for "
+                                f"spreadsheet '{sheet_name}'. Difference is:\n"
+                                f"\tExpected: {sorted(workflow_data[sheet_name])}\n"
+                                f"\tFound:    {sorted(worksheets)}")
+
+        # For product-specific spreadsheets
+        else:
+            required = {wsheet for wsheet in workflow_data["per-product"] if "*" not in wsheet}
+
+            if not required.issubset(worksheets): 
+                raise Exception(f"[ERROR] Could not find/process product-specific worksheets "
+                                f"for '{sheet_name}'. Missing: {required.difference(worksheets)}") 
+       
         # Now download the raw spreadsheet 
         spreadsheet_file = os.path.join(spreadsheet_dir, sheet_name)
 
