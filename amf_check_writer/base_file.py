@@ -14,7 +14,9 @@ class AmfFile(object):
         self.facets = facets
         self.namespace = self.facet_separator.join(facets)
 
+    def get_identifier(self):
+        return f"AMF{self.facet_separator}{self.namespace}"
+
     def get_filename(self, ext):
-        return "AMF{sep}{ns}.{ext}".format(sep=self.facet_separator,
-                                           ns=self.namespace,
-                                           ext=ext)
+        return f"{self.get_identifier()}.{ext}"
+
