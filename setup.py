@@ -9,6 +9,7 @@ setup(
     description="Library to write AMF compliance checks",
     packages=find_packages(),
     install_requires=requirements,
+    include_package_data=True,
     extras_require={
         "test": ["pytest"]
     },
