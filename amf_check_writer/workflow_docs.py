@@ -9,7 +9,9 @@ Writes some documentation (Markdown) about the workflow.
 import os
 import yaml
 
-INPUT_DATA = 'amf-check-writer/workflow_data.yml'
+
+this_dir = os.path.dirname(os.path.abspath(__file__))
+INPUT_DATA = os.path.join(this_dir, 'workflow_data.yml')
 OUTPUT_DIR = '.'
 
 
