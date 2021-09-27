@@ -1,0 +1,7 @@
+include *.txt
+include *.rst
+include *.yml
+recursive-include amf_check_writer *
+global-exclude __pycache__
+global-exclude *.py[co]
+
