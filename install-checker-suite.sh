@@ -57,7 +57,7 @@ CHECKS_DIR=$CHECKS_BASE_DIR/amf-compliance-checks-${CV_VERSIONS}/checks
 
 setup_file=${CHECKS_BASE_DIR}/setup-checks-env.sh
 
-echo "export CHECKS_BASEDIR=$CHECKS_BASE_DIR" >> $setup_file
+echo "export CHECKS_BASE_DIR=$CHECKS_BASE_DIR" >> $setup_file
 echo "export PATH=\$PATH:\${CHECKS_BASE_DIR}/miniconda3/bin" >> $setup_file
 echo " "  >> $setup_file
 echo "source activate amf-checks-env" >> $setup_file
