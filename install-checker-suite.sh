@@ -63,6 +63,7 @@ echo " "  >> $setup_file
 echo "source activate amf-checks-env" >> $setup_file
 echo "export PYESSV_ARCHIVE_HOME=$PYESSV_ARCHIVE_HOME" >> $setup_file
 echo "export CHECKS_DIR=$CHECKS_DIR" >> $setup_file
+echo "export VERSION=v2.0" >> $setup_file
 
 echo "[INFO] To setup environment, do:"
 echo "source $setup_file" 
@@ -71,12 +72,10 @@ echo "[INFO] Installation complete..."
 echo "[INFO] You can test it with:"
 
 echo "source $setup_file"
-echo "VERSION=v2.0"
 echo "TEST_FILE_NAME=ncas-anemometer-1_ral_29001225_mean-winds_v0.1.nc"
 echo 'TEST_FILE_URL="https://github.com/cedadev/compliance-check-lib/blob/master/tests/example_data/nc_file_checks_data/${TEST_FILE_NAME}?raw=true"'
 echo "wget -O \$TEST_FILE_NAME \$TEST_FILE_URL"
-echo "TEST_FILE=\${PWD}/\${TEST_FILE_NAME}"
-echo "amf-checker --yaml-dir \$CHECKS_DIR --version \$VERSION \$TEST_FILE"
+echo "amf-checker --yaml-dir \$CHECKS_DIR --version \$VERSION \$TEST_FILE_NAME"
 
 echo "[INFO] Or more generally:"
 echo "amf-checker --yaml-dir $CHECKS_DIR --version <version> <test_file>"
