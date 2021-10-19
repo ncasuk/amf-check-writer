@@ -16,20 +16,22 @@ from amf_check_writer.spreadsheet_handler import DeploymentModes
 
 # Regex to match filenames and extract product name
 FILENAME_REGEX = re.compile(
-    r"^([^\s_]+_){2}"         # <instrument>_<platform>_
+    r"^([^\s_]+_){2}"                 # <instrument>_<platform>_
     r"(\d{4}(\d{2})?(\d{2})?|\d{8}(-\d{2})?(\d{2})?(\d{2})?)_"
-                              # Valid options:
-                              # <YYYY>
-                              # <YYYY><MM>
-                              # <YYYY><MM><DD>
-                              # <YYYY><MM><DD>-<HH>
-                              # <YYYY><MM><DD>-<HH><mm>
-                              # <YYYY><MM><DD>-<HH><mm><ss>
-    r"(?P<product>[^\s_]+)_"  # data product
-    r"([^\s_]+_)*"            # optional: <option1>_<option2>_...<optionN>_
-    r"v\d+(\.\d+)?"           # version: vN[.M]
-    r"\.nc$"                  # .nc extension
+                                      # Valid options:
+                                      # <YYYY>
+                                      # <YYYY><MM>
+                                      # <YYYY><MM><DD>
+                                      # <YYYY><MM><DD>-<HH>
+                                      # <YYYY><MM><DD>-<HH><mm>
+                                      # <YYYY><MM><DD>-<HH><mm><ss>
+    r"(?P<product>[a-zA-Z][^\s_]+)_"  # data product
+    r"([a-zA-Z][^\s_]*_)*"            # optional: <option1>_<option2>_...<optionN>_
+    r"v\d+(\.\d+)?"                   # version: vN[.M]
+    r"\.nc$"                          # .nc extension
 )
+
+
 # The above regex in a human readable form, used in error messages. MAKE SURE
 # IT MATCHES THE REGEX!
 FILENAME_FORMAT_HUMAN_READABLE = (

@@ -2,24 +2,6 @@ from amf_check_writer.amf_checker import (FILENAME_REGEX,
         get_product_from_filename, get_deployment_mode)
 
 
-import re
-FILENAME_REGEX = re.compile(
-    r"^([^\s_]+_){2}"                 # <instrument>_<platform>_
-    r"(\d{4}(\d{2})?(\d{2})?|\d{8}(-\d{2})?(\d{2})?(\d{2})?)_"
-                                      # Valid options:
-                                      # <YYYY>
-                                      # <YYYY><MM>
-                                      # <YYYY><MM><DD>
-                                      # <YYYY><MM><DD>-<HH>
-                                      # <YYYY><MM><DD>-<HH><mm>
-                                      # <YYYY><MM><DD>-<HH><mm><ss>
-    r"(?P<product>[a-zA-Z][^\s_]+)_"  # data product
-    r"([a-zA-Z][^\s_]*_)*"            # optional: <option1>_<option2>_...<optionN>_
-    r"v\d+(\.\d+)?"                   # version: vN[.M]
-    r"\.nc$"                          # .nc extension
-)
-
-
 def test_FILENAME_REGEX_success():
 
     extras = ["", "opt1_", "opt1_opt2_", "opt1_opt2_opt3_"]
