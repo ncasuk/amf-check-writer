@@ -26,7 +26,7 @@ FILENAME_REGEX = re.compile(
                               # <YYYY><MM><DD>-<HH><mm>
                               # <YYYY><MM><DD>-<HH><mm><ss>
     r"(?P<product>[^\s_]+)_"  # data product
-    r"(([^\s_]+_))?"          # optional: <option1>_<option2>_...<optionN>_
+    r"([^\s_]+_)*"            # optional: <option1>_<option2>_...<optionN>_
     r"v\d+(\.\d+)?"           # version: vN[.M]
     r"\.nc$"                  # .nc extension
 )
