@@ -2,8 +2,9 @@ from amf_check_writer.amf_checker import (FILENAME_REGEX,
         get_product_from_filename, get_deployment_mode)
 
 
-def test_FILENAME_REGEX_success():
-
+def _get_good_filenames():
+    
+    fnames = []
     extras = ["", "opt1_", "opt1_opt2_", "opt1_opt2_opt3_"]
     suffixes = ["v1.nc", "v1.1.nc"]
 
@@ -19,8 +20,15 @@ def test_FILENAME_REGEX_success():
     for extra in extras:
         for suffix in suffixes:
             for prefix in prefixes:
-                fname = prefix + extra + suffix
-                assert FILENAME_REGEX.match(fname), f"Did not match: {fname}" 
+                fnames.append(prefix + extra + suffix)
+
+    return fnames
+
+
+def test_FILENAME_REGEX_success():
+    fnames = _get_good_filenames()
+    for fname in fnames:
+        assert FILENAME_REGEX.match(fname), f"Did not match: {fname}" 
 
 
 def test_FILENAME_REGEX_failures():
@@ -50,25 +58,13 @@ def test_FILENAME_REGEX_failures():
 
 
 def test_get_product_from_filename():
-    #fname = os.path.basename(path)
-    match = FILENAME_REGEX.match(fname)
-    if not match:
-        raise ValueError(
-            "Filename '{}' does not match expected format '{}'"
-            .format(fname, FILENAME_FORMAT_HUMAN_READABLE)
-        )
-    return match.group("product")
+    fnames = _get_good_filenames()
+
+    for fname in fnames:
+        prod = get_product_from_filename(fname)
+        assert prod == "prod", f"Did not match product in: {fname}"
 
 
 def test_get_deployment_mode():
-    #d = Dataset(path)
-   
-    try:
-        mode_str = d.deployment_mode
-    except AttributeError:
-        raise ValueError("Attribute 'deployment_mode' not found in '{}'".format(fname))
-
-    for mode in DeploymentModes:
-        if mode.value.lower() == mode_str:
-            return mode
-
+    # Not written yet - need to find inside files
+    pass
