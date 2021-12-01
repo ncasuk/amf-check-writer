@@ -11,6 +11,7 @@ import argparse
 
 from netCDF4 import Dataset
 
+import cchecker
 from amf_check_writer.spreadsheet_handler import DeploymentModes
 
 
@@ -69,15 +70,17 @@ def get_deployment_mode(path):
     try:
         mode_str = d.deployment_mode
     except AttributeError:
-        raise ValueError("Attribute 'deployment_mode' not found in '{}'".format(fname))
+        raise ValueError(f"Attribute 'deployment_mode' not found in '{fname}'")
 
     for mode in DeploymentModes:
         if mode.value.lower() == mode_str:
             return mode
 
-    raise ValueError(
-        "Unrecognised deployment mode '{}' in '{}'".format(mode_str, fname)
-    )
+    raise ValueError(f"Unrecognised deployment mode '{mode_str}' in '{fname}'")
+
+
+def _get_extension(fmt="text"):
+    return fmt.split("_")[0].replace("text", "txt")
 
 
 def main():
@@ -102,10 +105,12 @@ def main():
     parser.add_argument(
         "-f", "--format",
         dest="output_format",
+        default="text",
         help="Output format. This is forwarded to compliance-checker. See "
              "'compliance-checker --help' for the available formats. Note "
              "you must use 'json_new' instead of 'json' if checking multiple "
-             "files"
+             "files",
+        choices=["text", "html", "json", "json_new"]
     )
     parser.add_argument(
         "-v", "--version",
@@ -133,8 +138,7 @@ def main():
             dir_contents = [os.path.join(fname, p) for p in os.listdir(fname)]
             files += filter(os.path.isfile, dir_contents)
         else:
-            parser.error("cannot check `{}': no such file or directory"
-                         .format(fname))
+            parser.error(f"[ERROR] Cannot check '{fname}': no such file or directory")
 
     if args.output_dir and not os.path.isdir(args.output_dir):
         os.mkdir(args.output_dir)
@@ -146,38 +150,53 @@ def main():
             product = get_product_from_filename(fname)
             mode = get_deployment_mode(fname)
         except ValueError as ex:
-            print("WARNING: {}".format(ex), file=sys.stderr)
+            print(f"[WARNING] {ex}", file=sys.stderr)
             continue
 
         key = (product, mode)
         if key not in groups:
             groups[key] = []
+
         groups[key].append(fname)
 
     if not groups:
-        print("Nothing to do")
+        print("[WARNING] Nothing to do")
         sys.exit(0)
 
+    output_paths = []
+
     for (product, mode), fnames in groups.items():
-        yaml_check = "product_{prod}_{dep_m}".format(prod=product,
-                                                     dep_m=mode.value.lower())
+        dep_mode = mode.value.lower()
+        yaml_check = f"product_{product}_{dep_mode}"
+
         cc_args = [
             "compliance-checker",
-            "--yaml", os.path.join(args.yaml_dir, "AMF_{}.yml".format(yaml_check)),
-            "--test", "{}_checks:{}".format(yaml_check,args.checks_version_number)
+            "--yaml", os.path.join(args.yaml_dir, f"AMF_{yaml_check}.yml"),
+            "--test", f"{yaml_check}_checks:{args.checks_version_number}"
         ]
 
-        if args.output_format:
-            cc_args += ["--format", args.output_format]
+        cc_args += ["--format", args.output_format]
 
         if args.output_dir:
+            ext = _get_extension(args.output_format)
+
             for fname in fnames:
-                result_fname = "{}.cc-output".format(os.path.basename(fname))
-                cc_args += ["--output", os.path.join(args.output_dir, result_fname)]
+                result_fname = f"{os.path.basename(fname)}.cc-output"
+                output_path = os.path.join(args.output_dir, f"{result_fname}.{ext}")
+                cc_args += ["--output", output_path]
+                output_paths.append(output_path)
 
         cc_args += fnames
-        subprocess.call(cc_args)
+        print(f"[INFO] Running compliance-checker with arguments: \n\t{' '.join(cc_args)}")
+
+        sys.argv = cc_args
+        cchecker.main()
+
+        if output_paths:
+            op = "\n\t".join(output_paths)
+            print(f"[INFO] Output written to: \n\t{op}")
 
 
 if __name__ == "__main__":
+
     main()
