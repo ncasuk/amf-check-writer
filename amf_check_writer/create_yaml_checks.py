@@ -32,7 +32,7 @@ def main():
     version_dir = os.path.join(args.source_dir, args.version)
     sh = SpreadsheetHandler(version_dir)
 
-    checks_dir = os.path.join(version_dir, "checks")
+    checks_dir = os.path.join(version_dir, "amf-checks")
     if not os.path.isdir(checks_dir): 
         os.makedirs(checks_dir)
 
