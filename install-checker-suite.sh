@@ -53,7 +53,7 @@ done
 
 echo "[INFO] Create setup file..."
 PYESSV_ARCHIVE_HOME=$CHECKS_BASE_DIR/AMF_CVs-${CV_VERSIONS}/pyessv-vocabs
-CHECKS_DIR=$CHECKS_BASE_DIR/amf-compliance-checks-${CV_VERSIONS}/checks
+CHECKS_DIR=$CHECKS_BASE_DIR/amf-compliance-checks-${CV_VERSIONS}/amf-checks
 
 setup_file=${CHECKS_BASE_DIR}/setup-checks-env.sh
 
