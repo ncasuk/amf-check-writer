@@ -32,7 +32,7 @@ def main():
     sh = SpreadsheetHandler(version_dir)
 
     cvs_dir = os.path.join(version_dir, "AMF_CVs")
-    pyessv_dir = os.path.join(version_dir, "pyessv-vocabs")
+    pyessv_dir = os.path.join(version_dir, "amf-pyessv-vocabs")
 
     for dr in (cvs_dir, pyessv_dir):
         if not os.path.isdir(dr):
