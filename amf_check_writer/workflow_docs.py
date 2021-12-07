@@ -58,7 +58,7 @@ def fmt_table(dct):
 
 def fmt_section(dct):
     text = dct["text"].replace("[NEW_PARA]", "\n\n")
-    md = f"## {dct['header']}\n\n{text}\n\n"
+    md = f"\n## {dct['header']}\n\n{text}\n\n"
     md += fmt_table(dct)
     return md
 
@@ -81,7 +81,7 @@ def write_workflow_doc():
 
     output_file = os.path.join(OUTPUT_DIR, 'amf-check-workflow.md')
     with open(output_file, "w") as writer:
-        writer.write(markdown)
+        writer.write(markdown + "\n\n")
 
     print(f"[INFO] Wrote workflow to: {output_file}")
  
