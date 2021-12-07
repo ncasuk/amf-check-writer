@@ -82,9 +82,9 @@ class SpreadsheetHandler(object):
         # Check that correct CVs were written
         json_files = {cv.get_filename("json") for cv in cvs}
 
-        cv_wf_data = workflow_data["controlled-vocabularies"]
-        expected_common_files = {json for json in cv_wf_data["json-common"]}
-        per_product_templates = cv_wf_data["json-per-product"]
+        cv_wf_data = workflow_data["json-cvs"]
+        expected_common_files = {json for json in cv_wf_data["common"]}
+        per_product_templates = cv_wf_data["per-product"]
         optional_product_files = set()
 
         for product_name in self.product_names:
