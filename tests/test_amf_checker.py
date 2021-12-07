@@ -33,12 +33,11 @@ def test_FILENAME_REGEX_success():
 
 def test_FILENAME_REGEX_failures():
 
-    extras = ["", "opt1_", "opt1_opt2_", "opt1_opt2_opt3_"]
+    extras = ["", "1opt1_", "opt1_", "opt1_opt2_", "opt1_opt2_opt3_"]
     suffixes = ["v1.nc", "v1.1.nc", "v1.2.0.nc"]
 
     prefixes = [
         "instr_plat_19991_prod_",
-        "instr_plat_1999_01_prod_",
         "instr_plat_1999010_prod_",
         "instr_plat_19990101-0_prod_",
         "instr_plat_19990101-010_prod_",
