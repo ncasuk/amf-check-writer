@@ -13,6 +13,7 @@ from netCDF4 import Dataset
 
 import cchecker
 from amf_check_writer.spreadsheet_handler import DeploymentModes
+from amf_check_writer.config import DEFAULT_AMF_CHECKS_DIR
 
 
 # Regex to match filenames and extract product name
@@ -94,7 +95,9 @@ def main():
     # Options
     parser.add_argument(
         "--yaml-dir",
-        help="Directory containing YAML checks for AMF"
+        default=DEFAULT_AMF_CHECKS_DIR,
+        help="Directory containing YAML checks for AMF. "
+             "Default: installed in 'site-packages' directory."
     )
     parser.add_argument(
         "-o", "--output-dir",
