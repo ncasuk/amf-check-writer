@@ -51,10 +51,23 @@ for pkg in $PACKAGES; do
     rm -f $zfile 
 done
 
-echo "[INFO] Create setup file..."
-PYESSV_ARCHIVE_HOME=$CHECKS_BASE_DIR/AMF_CVs-${CV_VERSIONS}/amf-pyessv-vocabs
-CHECKS_DIR=$CHECKS_BASE_DIR/amf-compliance-checks-${CV_VERSIONS}/amf-checks
+echo "[INFO] Define PYESSV_ARCHIVE_HOME directory..."
+for dir_candidate in pyessv-vocabs amf-pyessv-vocabs ; do
+    PYESSV_ARCHIVE_HOME=$CHECKS_BASE_DIR/AMF_CVs-${CV_VERSIONS}/${dir_candidate}
+    if [ -d $CHECKS_DIR ]; then
+        break
+    fi
+done
 
+echo "[INFO] Define CHECKS_DIR directory..."
+for dir_candidate in checks amf-checks ; do
+    CHECKS_DIR=$CHECKS_BASE_DIR/amf-compliance-checks-${CV_VERSIONS}/${dir_candidate}
+    if [ -d $CHECKS_DIR ]; then
+        break
+    fi
+done
+
+echo "[INFO] Create setup file..."
 setup_file=${CHECKS_BASE_DIR}/setup-checks-env.sh
 
 echo "export CHECKS_BASE_DIR=$CHECKS_BASE_DIR" >> $setup_file
@@ -73,7 +86,7 @@ echo "[INFO] You can test it with:"
 
 echo "source $setup_file"
 echo "TEST_FILE_NAME=ncas-anemometer-1_ral_29001225_mean-winds_v0.1.nc"
-echo 'TEST_FILE_URL="https://github.com/cedadev/compliance-check-lib/blob/master/tests/example_data/nc_file_checks_data/${TEST_FILE_NAME}?raw=true"'
+echo 'TEST_FILE_URL="https://github.com/cedadev/compliance-check-lib/blob/main/tests/example_data/nc_file_checks_data/${TEST_FILE_NAME}?raw=true"'
 echo "wget -O \$TEST_FILE_NAME \$TEST_FILE_URL"
 echo "amf-checker --yaml-dir \$CHECKS_DIR --version \$VERSION \$TEST_FILE_NAME"
 
