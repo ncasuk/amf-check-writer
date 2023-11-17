@@ -11,7 +11,6 @@ import argparse
 from pathlib import Path
 
 import httplib2
-from pygdrive3 import service
 
 from apiclient import discovery
 from apiclient import http
