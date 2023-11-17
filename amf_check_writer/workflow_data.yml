@@ -23,6 +23,9 @@ google_drive_content:
     - platforms
     - creators
     - file-naming
+  _instrument_vocabs.xlsx:
+    - community-instrument-name-and-descriptors
+    - ncas-instrument-name-and-descriptors
   per-product:
     - dimensions-specific 
     - global-attributes-specific*

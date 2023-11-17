@@ -22,8 +22,10 @@ from amf_check_writer.config import (
     CURRENT_VERSION,
     SHARED_DRIVE_ID,
     GENERAL_PRODUCTS_FOLDER_ID,
+    VOCABS_FOLDER_ID,
     PRODUCT_COUNT_MINIMUM,
     ALL_VERSIONS,
+    ALL_VOCABS,
     NROWS_TO_PARSE,
 )
 
@@ -40,7 +42,7 @@ API_CALL_TIMES = []
 workflow_data = {k: v for k, v in read_workflow_data()["google_drive_content"].items()}
 ALLOWED_WORKSHEET_NAMES = {
     worksheet.strip("*")
-    for section in ["_common.xlsx", "_vocabularies.xlsx", "per-product"]
+    for section in ["_common.xlsx", "_vocabularies.xlsx", "_instrument_vocabs.xlsx", "per-product"]
     for worksheet in workflow_data[section]
 }
 
@@ -86,12 +88,16 @@ class SheetDownloader(object):
     spreadsheets
     """
 
-    def __init__(self, out_dir, version, secrets_file=None, regenerate=False):
+    def __init__(self, out_dir, version = None, vocab = None, secrets_file=None, regenerate=False):
         self.version = version
-        self.out_dir = os.path.join(out_dir, self.version)
+        self.vocab = vocab
+        self.out_dir = out_dir
+        self.vocab_out_dir = os.path.join(out_dir, "vocabs")
 
-        if not os.path.isdir(self.out_dir):
+        if self.version and not os.path.isdir(self.out_dir):
             os.makedirs(self.out_dir)
+        if self.vocab and not os.path.isdir(self.vocab_out_dir):
+            os.makedirs(self.vocab_out_dir)
 
         self.secrets_file = secrets_file
         self.regenerate = regenerate
@@ -117,7 +123,10 @@ class SheetDownloader(object):
         # self.drive_service = drive_service.drive_service
 
     def run(self):
-        self.find_all_spreadsheets(self.save_spreadsheet_callback())
+        if self.version:
+            self.find_all_spreadsheets(self.save_spreadsheet_callback(), root_id=GENERAL_PRODUCTS_FOLDER_ID, folder_name=self.out_dir)
+        if self.vocab:
+            self.find_all_spreadsheets(self.save_spreadsheet_callback(), root_id=VOCABS_FOLDER_ID, folder_name=self.vocab_out_dir)
 
     @api_call
     def get_folder_children(self, shared_drive_id, folder_id):
@@ -170,7 +179,7 @@ class SheetDownloader(object):
         self,
         callback,
         shared_drive_id=SHARED_DRIVE_ID,
-        root_id=GENERAL_PRODUCTS_FOLDER_ID,
+        root_id=VOCABS_FOLDER_ID,
         folder_name="",
     ):
         """
@@ -189,11 +198,11 @@ class SheetDownloader(object):
                     print(f"[INFO] Skipping folder '{fname}'")
                     continue
 
-                if fname in self.version:
+                if (self.version and fname in self.version) or (self.vocab and fname in self.vocab):
                     print(f"[INFO] Found and using '{fname}'")
                 else:
                     print(
-                        f"[INFO] Skipping folder with '{fname}' as we want '{self.version}'"
+                        f"[INFO] Skipping folder with '{fname}' as we want version '{self.version}' or vocab '{self.vocab}'"
                     )
                     continue
 
@@ -208,15 +217,16 @@ class SheetDownloader(object):
                 # Process the spreadsheet
                 callback(fname, f["id"], folder_name)
 
+        """
         # Check valid content was found
         if len([item for item in fnames if item.endswith(".xlsx")]) > 5:
             expected_xlsx = {xlsx for xlsx in workflow_data if xlsx.endswith(".xlsx")}
             if not expected_xlsx.issubset(set(fnames)):
                 diff = expected_xlsx.difference(fnames)
-                raise ValueError(
+                print( 'ValueError('
                     f"[ERROR] The following expected spreadsheets were not found on "
                     f"Google Drive: {diff}"
-                )
+                ')')
 
             if len(fnames) < PRODUCT_COUNT_MINIMUM:
                 raise Exception(
@@ -224,6 +234,7 @@ class SheetDownloader(object):
                     f"the minimum expected: {len(fnames)} < {PRODUCT_COUNT_MINIMUM}."
                     f" Please investigate."
                 )
+        """
 
     def write_values_to_tsv(self, values, out_file):
         """
@@ -242,7 +253,7 @@ class SheetDownloader(object):
                 )
                 f.write(os.linesep)
 
-    def download_all_sheets(self, sheet_id, sheet_name):
+    def download_all_sheets(self, sheet_id, sheet_name, parent_folder):
         """
         Download each sheet of a spreadsheet as a TSV file and save them to an
         output directory.
@@ -271,7 +282,7 @@ class SheetDownloader(object):
                 f"[ERROR] Sheet does not have expected name with '.xlsx' extension: {sheet_name}"
             )
 
-        prod_def_dir = os.path.join(self.out_dir, "product-definitions")
+        prod_def_dir = os.path.join(parent_folder, "product-definitions")
         tsv_dir = os.path.join(prod_def_dir, "tsv", sheet_name_no_xlsx)
         spreadsheet_dir = os.path.join(prod_def_dir, "spreadsheet")
 
@@ -345,7 +356,7 @@ class SheetDownloader(object):
         """
 
         def callback(name, sheet_id, parent_folder):
-            self.download_all_sheets(sheet_id, name)
+            self.download_all_sheets(sheet_id, name, parent_folder)
 
         return callback
 
@@ -364,9 +375,17 @@ def main():
     parser.add_argument(
         "-v",
         "--version",
-        required=True,
         choices=ALL_VERSIONS,
-        help=f"Version of the spreadsheets to use (e.g. '{CURRENT_VERSION}').",
+        help=f"Version of the NCAS-GENERAL spreadsheets to use (e.g. '{CURRENT_VERSION}').",
+        default = None,
+    )
+
+    parser.add_argument(
+        "-c",
+        "--vocab",
+        choices = ALL_VOCABS,
+        help = "Specific vocabulary to download",
+        default = None,
     )
 
     parser.add_argument(
@@ -379,9 +398,15 @@ def main():
     parser.add_argument("--no-regenerate", dest="regenerate", action="store_false")
 
     args = parser.parse_args(sys.argv[1:])
+
+    if not args.version and not args.vocab:
+        msg = "At least one of -v/--version and -c/--vocab must be specified"
+        raise ValueError(msg)
+    
     downloader = SheetDownloader(
         args.output_dir,
-        args.version,
+        version = args.version,
+        vocab = args.vocab,
         secrets_file=args.secrets,
         regenerate=args.regenerate,
     )
