@@ -1,5 +1,7 @@
 google-api-python-client
 httplib2
+google-auth
+google-auth-oauthlib
 oauth2client
 pyasn1
 pyasn1-modules
