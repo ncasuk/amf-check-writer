@@ -12,4 +12,3 @@ uritemplate
 pyessv
 enum34
 netCDF4
-pygdrive3
