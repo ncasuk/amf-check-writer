@@ -55,7 +55,7 @@ def api_call(func):
 
     def inner(*args, **kwargs):
         # Rate limit is 'max_request' requests per 'min_time' seconds
-        max_requests = 20
+        max_requests = 30
         min_time = 120
 
         now = time.time()
