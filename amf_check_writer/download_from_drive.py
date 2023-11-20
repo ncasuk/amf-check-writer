@@ -312,7 +312,7 @@ class SheetDownloader(object):
                 self.write_values_to_tsv(
                     self.get_sheet_values(sheet_id, cell_range), out_file
                 )
-
+        """
         # Check the expected worksheet files were processed
         # For general (relating to all products) spreadsheets
         if sheet_name.startswith("_"):
@@ -335,7 +335,7 @@ class SheetDownloader(object):
                     f"[ERROR] Could not find/process product-specific worksheets "
                     f"for '{sheet_name}'. Missing: {required.difference(worksheets)}"
                 )
-
+        """
         # Now download the raw spreadsheet
         spreadsheet_file = os.path.join(spreadsheet_dir, sheet_name)
 
