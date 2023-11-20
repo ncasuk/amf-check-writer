@@ -10,5 +10,4 @@ rsa
 six
 uritemplate
 pyessv
-enum34
 netCDF4
