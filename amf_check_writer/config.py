@@ -10,7 +10,7 @@ NROWS_TO_PARSE = 999
 PRODUCT_COUNT_MINIMUM = 50
 
 ALL_VERSIONS = (
-    "v1.0", "v1.1", "v2.0"
+    "v1.0", "v1.1", "v2.0", "v2.1a"
 )
 
 ALL_VOCABS = (
