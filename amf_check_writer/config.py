@@ -15,6 +15,7 @@ ALL_VERSIONS = (
 
 ALL_VOCABS = (
     "instruments",
+    "platforms",
 )
 
 
