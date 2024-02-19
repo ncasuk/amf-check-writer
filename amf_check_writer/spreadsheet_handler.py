@@ -33,8 +33,10 @@ class DeploymentModes(Enum):
 SPREADSHEET_NAMES = {
     "common_spreadsheet": "_common",
     "vocabs_spreadsheet": "_vocabularies",
+    "platform_vocabs_spreadsheet": "_platform_vocabs",
     "instrument_vocabs_spreadsheet": "_instrument_vocabs",
     "global_attrs_worksheet": "global-attributes.tsv",
+    "platform_worksheet": "platforms.tsv",
     "ncas_instruments_worksheet": "ncas-instrument-name-and-descriptors.tsv",
     "community_instruments_worksheet": "community-instrument-name-and-descriptors.tsv",
     "data_products_worksheet": "data-products.tsv",
@@ -311,6 +313,16 @@ class SpreadsheetHandler(object):
                     path=static_path("community_instruments_worksheet", vocabs="instrument_vocabs_spreadsheet"),
                     cls=InstrumentsCV,
                     facets=["community_instrument"]
+                ),
+            ]
+            self.product_names = []
+
+        elif self.version_or_vocab == "platforms":
+            cv_parse_infos = [
+                CVParseInfo(
+                    path=static_path("platform_worksheet", vocabs="platform_vocabs_spreadsheet"),
+                    cls=PlatformsCV,
+                    facets=["platform"]
                 ),
             ]
             self.product_names = []
