@@ -33,7 +33,10 @@ class DeploymentModes(Enum):
 SPREADSHEET_NAMES = {
     "common_spreadsheet": "_common",
     "vocabs_spreadsheet": "_vocabularies",
+    "platform_vocabs_spreadsheet": "_platform_vocabs",
+    "instrument_vocabs_spreadsheet": "_instrument_vocabs",
     "global_attrs_worksheet": "global-attributes.tsv",
+    "platform_worksheet": "platforms.tsv",
     "ncas_instruments_worksheet": "ncas-instrument-name-and-descriptors.tsv",
     "community_instruments_worksheet": "community-instrument-name-and-descriptors.tsv",
     "data_products_worksheet": "data-products.tsv",
@@ -65,8 +68,9 @@ class SpreadsheetHandler(object):
         "global-attributes": {"name": "global-attributes", "cls": GlobalAttrCheck}
     }
 
-    def __init__(self, version_dir):
+    def __init__(self, version_dir, version_or_vocab):
         self.path = version_dir
+        self.version_or_vocab = version_or_vocab
 
     def write_cvs(self, output_dir, write_pyessv=True, pyessv_root=None):
         """
@@ -76,9 +80,15 @@ class SpreadsheetHandler(object):
         :param pyessv_root:  directory to use as pyessv archive
         """
         cvs = list(self.get_all_cvs())
-        version_number = self._find_version_number(output_dir)
+        #if "/vocabs/" in output_dir:
+        #    version_number = "vocabs"
+        #else:
+        if self.version_or_vocab == "version":
+            version_number = self._find_version_number(output_dir)
+        else:
+            version_number = "vocabs"
         self._write_output_files(cvs, BaseCV.to_json, output_dir, "json", version_number)
-
+        
         # Check that correct CVs were written
         json_files = {cv.get_filename("json") for cv in cvs}
 
@@ -98,8 +108,10 @@ class SpreadsheetHandler(object):
 
         if not expected_common_files.issubset(json_files):
             diff = expected_common_files.difference(json_files)
-            raise ValueError(f"[ERROR] The following expected JSON controlled "
-                             f"vocabulary JSON files were not created: {diff}.")
+            if not version_number == "vocabs":
+                if float(version_number[1:]) <= 2.0 or not diff == set(('AMF_ncas_instrument.json', 'AMF_community_instrument.json')):
+                    raise ValueError(f"[ERROR] The following expected JSON controlled "
+                                 f"vocabulary JSON files were not created: {diff}.")
 
         product_ga_and_dim_files = {json for json in json_files 
             if json.startswith("AMF_product_") and "common" not in json and
@@ -109,7 +121,7 @@ class SpreadsheetHandler(object):
             diff = product_ga_and_dim_files.difference(optional_product_files)
             raise ValueError(f"[ERROR] The following expected JSON controlled "
                              f"vocabulary JSON files were not created: {diff}.")
-
+        
         # Write as PYESSV format if required
         if write_pyessv:
             writer = PyessvWriter(pyessv_root=pyessv_root)
@@ -246,45 +258,78 @@ class SpreadsheetHandler(object):
         :return:           an iterator of instances of subclasses of `BaseCV`
         """
         # Static CVs
-        def static_path(name):
-            return os.path.join('product-definitions/tsv', SPREADSHEET_NAMES["vocabs_spreadsheet"],
-                                SPREADSHEET_NAMES[name])
-        cv_parse_infos = [
-            CVParseInfo(
-                path=static_path("ncas_instruments_worksheet"),
-                cls=InstrumentsCV,
-                facets=["ncas_instrument"]
-            ),
-            CVParseInfo(
-                path=static_path("community_instruments_worksheet"),
-                cls=InstrumentsCV,
-                facets=["community_instrument"]
-            ),
-            CVParseInfo(
-                path=static_path("data_products_worksheet"),
-                cls=ProductsCV,
-                facets=["product"]
-            ),
-            CVParseInfo(
-                path=static_path("platforms_worksheet"),
-                cls=PlatformsCV,
-                facets=["platform"]
-            ),
-            CVParseInfo(
-                path=static_path("scientists_worksheet"),
-                cls=ScientistsCV,
-                facets=["scientist"]
-            )
-        ]
+        def static_path(name, vocabs=None):
+            if vocabs:
+                return os.path.join('product-definitions/tsv', SPREADSHEET_NAMES[vocabs], SPREADSHEET_NAMES[name])
+            else:
+                return os.path.join('product-definitions/tsv', SPREADSHEET_NAMES["vocabs_spreadsheet"],
+                                    SPREADSHEET_NAMES[name])
+        
+        if self.version_or_vocab == "version":
+            cv_parse_infos = [
+                CVParseInfo(
+                    path=static_path("ncas_instruments_worksheet"),
+                    cls=InstrumentsCV,
+                    facets=["ncas_instrument"]
+                ),
+                CVParseInfo(
+                    path=static_path("community_instruments_worksheet"),
+                    cls=InstrumentsCV,
+                    facets=["community_instrument"]
+                ),
+                CVParseInfo(
+                    path=static_path("data_products_worksheet"),
+                    cls=ProductsCV,
+                    facets=["product"]
+                ),
+                CVParseInfo(
+                    path=static_path("platforms_worksheet"),
+                    cls=PlatformsCV,
+                    facets=["platform"]
+                ),
+                CVParseInfo(
+                    path=static_path("scientists_worksheet"),
+                    cls=ScientistsCV,
+                    facets=["scientist"]
+                )
+            ]
+            cv_parse_infos += self._get_common_var_dim_parse_info()
+            per_product_cvs = list(self._get_per_product_parse_info())
+            cv_parse_infos += per_product_cvs
 
-        cv_parse_infos += self._get_common_var_dim_parse_info()
-        per_product_cvs = list(self._get_per_product_parse_info())
-        cv_parse_infos += per_product_cvs
+            if not per_product_cvs:
+                print(f"[WARNING] No product variable/dimension spreadsheets found in {self.path}",
+                    file=sys.stderr
+                )
 
-        if not per_product_cvs:
-            print(f"[WARNING] No product variable/dimension spreadsheets found in {self.path}",
-                file=sys.stderr
-            )
+        elif self.version_or_vocab == "instruments":
+            cv_parse_infos = [
+                CVParseInfo(
+                    path=static_path("ncas_instruments_worksheet", vocabs="instrument_vocabs_spreadsheet"),
+                    cls=InstrumentsCV,
+                    facets=["ncas_instrument"]
+                ),
+                CVParseInfo(
+                    path=static_path("community_instruments_worksheet", vocabs="instrument_vocabs_spreadsheet"),
+                    cls=InstrumentsCV,
+                    facets=["community_instrument"]
+                ),
+            ]
+            self.product_names = []
+
+        elif self.version_or_vocab == "platforms":
+            cv_parse_infos = [
+                CVParseInfo(
+                    path=static_path("platform_worksheet", vocabs="platform_vocabs_spreadsheet"),
+                    cls=PlatformsCV,
+                    facets=["platform"]
+                ),
+            ]
+            self.product_names = []
+        
+        else:
+            raise ValueError(f"Vocab {self.version_or_vocab} doesn't exist (how did we get here?)")
+
 
         for count, (path, cls, facets) in enumerate(cv_parse_infos):
             if base_class and base_class not in cls.__bases__:
@@ -320,7 +365,7 @@ class SpreadsheetHandler(object):
         sheet_regex = re.compile(
             r"/tsv/(?P<name>[a-zA-Z0-9-]+)/(?P<type>variables|dimensions|global-attributes)-specific\.tsv$"
         )
-        ignore_match = re.compile(r"/(_common|_vocabularies)/")
+        ignore_match = re.compile(r"/(_common|_vocabularies|_instrument_vocabs)/")
 
         prods_dir = os.path.join(self.path, 'product-definitions/tsv')
 
